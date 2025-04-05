@@ -1,62 +1,114 @@
-# DeFi Watchdog - Smart Contract Security Guardian for Sonic Blockchain
+# DeFi Watchdog - Multi-Chain Smart Contract Security Auditor
 
+DeFi Watchdog is an AI-powered smart contract auditing tool that helps users analyze contracts across multiple blockchains, find vulnerabilities, and receive security certifications for safe contracts.
 
-1. **Focus on Sonic Ecosystem**: Our project is built specifically for the Sonic blockchain, utilizing its high TPS and sub-second finality for responsive contract analysis.
+## Features
 
-2. **Autonomous Agent**: We've integrated with the ZerePy framework to create an autonomous agent that monitors and analyzes contracts without user intervention.
-
-3. **DeFAI Integration**: Our solution combines blockchain data with AI analysis to provide intelligent security insights.
-
-4. **Social & On-Chain Actions**: The agent performs both on-chain actions (contract analysis) and social actions (community alerts).
-
-## Key Features
-
-- Real-time contract security analysis
-- Gas optimization suggestions specific to Sonic
-- Autonomous monitoring of deployed contracts
-- Community alerts for vulnerability detection
-- Dashboard with ecosystem insights
-
-
-
-
+- **Multi-Chain Support**: Analyze smart contracts on both Linea and Sonic blockchains
+- **AI-Powered Analysis**: Uses multiple AI models to perform thorough security assessments
+- **Detailed Vulnerability Reports**: Identifies and explains security issues with severity ratings
+- **Gas Optimizations**: Network-specific optimization suggestions 
+- **Security Scoring**: Comprehensive security score and risk assessment
+- **NFT Certification**: Mint security certificates for contracts that pass audits
+- **Patch Suggestions**: AI-generated patches for identified vulnerabilities
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+Before running the application, you need to set up your environment:
+
+1. Install Node.js (18.x or higher)
+2. Set up API keys (create a `.env.local` file based on `.env.local.example`)
+   - Required: `ETHERSCAN_API_KEY` and `OPENAI_API_KEY`
+   - Optional: `LINEASCAN_API_KEY`, `SONICSCAN_API_KEY`, and `DEEPSEEK_API_KEY`
+
+### Installation
 
 ```bash
+# Clone the repository
+git clone https://github.com/your-username/defi-watchdog.git
+cd defi-watchdog
+
+# Install dependencies
+npm install
+
+# Start the development server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Configuration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+DeFi Watchdog uses environment variables for configuration. Create a `.env.local` file in the root directory with the following variables:
 
-## Learn More
+```
+# API Keys (required)
+ETHERSCAN_API_KEY=your_etherscan_api_key
+OPENAI_API_KEY=your_openai_api_key
 
-To learn more about Next.js, take a look at the following resources:
+# Network-specific API keys (recommended)
+LINEASCAN_API_KEY=your_lineascan_api_key
+SONICSCAN_API_KEY=your_sonicscan_api_key
+DEEPSEEK_API_KEY=your_deepseek_api_key
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# MongoDB URI for data storage
+MONGODB_URI=your_mongodb_connection_string
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Contract addresses for certificate minting
+NEXT_PUBLIC_CONTRACT_ADDRESS_LINEA=your_linea_contract_address
+NEXT_PUBLIC_CONTRACT_ADDRESS_SONIC=your_sonic_contract_address
+```
 
-## Deploy on Vercel
+## Network Support
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Linea Network
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Linea support is fully implemented, allowing you to analyze contracts on the Linea blockchain. When using the Linea network:
 
+1. Make sure your `LINEASCAN_API_KEY` or `ETHERSCAN_API_KEY` is configured 
+2. Enter any verified contract address on Linea blockchain
+3. Receive a comprehensive security analysis with vulnerabilities and recommendations
 
+### Sonic Network
 
+Sonic network integration uses a specialized API for blockchain-specific optimizations. When using the Sonic network:
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+1. Configure your `SONICSCAN_API_KEY` 
+2. The analysis will be directed to the ZerePy system for Sonic-specific insights
+3. Get gas optimization suggestions specifically designed for Sonic blockchain
+
+## Project Structure
+
+- `/src/pages/api/`: API endpoints for smart contract analysis
+- `/src/lib/`: Core logic for contract analysis and blockchain integration
+- `/src/components/`: React components for the UI
+- `/src/pages/`: Application pages including audit interface
+- `/contracts/`: Smart contract for NFT certificate minting
+
+## Using DeFi Watchdog
+
+1. Navigate to the Audit page
+2. Enter a smart contract address and select the network (Linea or Sonic)
+3. Click "Analyze Contract"
+4. Review the detailed security assessment
+5. If the contract passes safety checks, you can mint a security certificate NFT
+
+## Troubleshooting
+
+If you encounter issues:
+
+1. Verify your API keys are configured correctly in `.env.local`
+2. Check the network status in the Health API (`/api/health` endpoint)
+3. Ensure the contract address is valid and verified on the selected network
+4. Review server logs for detailed error messages
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- Powered by OpenAI, Deepseek, and other AI technologies
+- Blockchain data provided by LineaScan and SonicScan APIs

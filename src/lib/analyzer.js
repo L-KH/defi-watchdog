@@ -94,14 +94,27 @@ const RISK_LEVELS = {
 /**
  * Main audit function that orchestrates the entire analysis process
  */
-async function auditSmartContract(address, network = 'mainnet', options = {}) {
+async function auditSmartContract(address, network = 'linea', options = {}) {
   console.log(`Starting audit for contract: ${address} on ${network}`);
   const startTime = Date.now();
   
   try {
+    // Check for Vercel mode and use lightweight analysis if enabled
+    const isVercelMode = options.vercelMode || false;
+    console.log(`Analysis mode: ${isVercelMode ? 'Vercel Lightweight' : 'Standard'} mode`);
+    
     // 1. Fetch contract source code from blockchain explorer
     const contractData = await getContractSource(address, network);
-    const contractInfo = await getContractInfo(address, network);
+    
+    // Skip additional info fetch for Vercel mode to save time
+    const contractInfo = isVercelMode ? {
+      address,
+      hasVerifiedCode: !!contractData.sourceCode,
+      abi: null,
+      creator: null,
+      createdAt: null,
+      txHash: null
+    } : await getContractInfo(address, network);
     
     if (!contractData.sourceCode || contractData.sourceCode === '') {
       console.warn('Contract source code not verified or available');
@@ -137,10 +150,12 @@ async function auditSmartContract(address, network = 'mainnet', options = {}) {
     // 2. Parse the contract and extract key components
     const contractMetadata = parseContractMetadata(contractData, contractInfo);
     
-    // 3. Perform initial static analysis
-    const staticAnalysisResults = performStaticAnalysis(contractData.sourceCode);
+    // 3. Perform initial static analysis - use simplified version for Vercel mode
+    const staticAnalysisResults = isVercelMode
+      ? performLightweightAnalysis(contractData.sourceCode)
+      : performStaticAnalysis(contractData.sourceCode);
     
-    // 4. Run AI-powered analysis using either traditional or multi-AI approach
+    // 4. Run AI-powered analysis using appropriate approach based on environment
     let aiAnalysisResults;
     let validatedResults;
 
@@ -156,13 +171,17 @@ async function auditSmartContract(address, network = 'mainnet', options = {}) {
       } catch (error) {
         console.error("Multi-AI analysis failed, falling back to traditional pipeline:", error);
         // Continue with the traditional pipeline
-        aiAnalysisResults = await performAIAnalysis(contractData, contractMetadata, staticAnalysisResults);
-        validatedResults = await validateFindings(contractData, aiAnalysisResults);
+        aiAnalysisResults = await performAIAnalysis(contractData, contractMetadata, staticAnalysisResults, options);
+        validatedResults = options.skipValidation ? 
+          aiAnalysisResults : 
+          await validateFindings(contractData, aiAnalysisResults);
       }
     } else {
       // Traditional analysis pipeline
-      aiAnalysisResults = await performAIAnalysis(contractData, contractMetadata, staticAnalysisResults);
-      validatedResults = await validateFindings(contractData, aiAnalysisResults);
+      aiAnalysisResults = await performAIAnalysis(contractData, contractMetadata, staticAnalysisResults, options);
+      validatedResults = options.skipValidation ? 
+        aiAnalysisResults : 
+        await validateFindings(contractData, aiAnalysisResults);
     }
     
     // 6. Generate comprehensive report
@@ -282,6 +301,55 @@ function determineContractType(sourceCode) {
   }
   
   return "Custom Contract";
+}
+
+/**
+ * Lightweight analysis for Vercel environment (faster)
+ */
+function performLightweightAnalysis(sourceCode) {
+  const findings = [];
+  
+  // Check for critical vulnerability patterns only
+  const criticalPatterns = {
+    reentrancy: VULNERABILITY_PATTERNS.reentrancy,
+    txOrigin: VULNERABILITY_PATTERNS.txOrigin,
+    delegatecall: VULNERABILITY_PATTERNS.delegatecall,
+    selfdestruct: VULNERABILITY_PATTERNS.selfdestruct
+  };
+  
+  for (const [vulnType, vulnInfo] of Object.entries(criticalPatterns)) {
+    const matches = sourceCode.match(vulnInfo.pattern);
+    if (matches) {
+      findings.push({
+        type: vulnType,
+        description: vulnInfo.description,
+        severity: determineSeverity(vulnType),
+        confidence: "Medium"
+      });
+    }
+  }
+  
+  // Quick checks for basic security practices
+  const hasOwner = sourceCode.includes("owner") || sourceCode.includes("Ownable");
+  const hasOpenZeppelin = sourceCode.includes("@openzeppelin");
+  
+  findings.push({
+    type: "generalObservation",
+    description: `Contract ${hasOwner ? "has" : "does not have"} owner functionality`,
+    severity: "INFO",
+    confidence: "High"
+  });
+  
+  if (hasOpenZeppelin) {
+    findings.push({
+      type: "generalObservation",
+      description: "Contract uses OpenZeppelin libraries which is a good security practice",
+      severity: "INFO",
+      confidence: "High"
+    });
+  }
+  
+  return findings;
 }
 
 /**
@@ -450,8 +518,14 @@ async function performDeepseekAnalysis(contractData, contractMetadata, staticAna
 /**
  * Perform AI-powered analysis on the contract code
  */
-async function performAIAnalysis(contractData, contractMetadata, staticAnalysisResults) {
+async function performAIAnalysis(contractData, contractMetadata, staticAnalysisResults, options = {}) {
   try {
+    // Check if we should do a lightweight analysis for Vercel
+    if (options.vercelMode) {
+      console.log("Using lightweight AI analysis for Vercel environment");
+      return createStaticAnalysisReport(staticAnalysisResults, contractMetadata.type);
+    }
+
     // Prepare the AI prompt with the contract code and initial findings
     const prompt = generateAIPrompt(contractData, contractMetadata, staticAnalysisResults);
     
@@ -459,14 +533,14 @@ async function performAIAnalysis(contractData, contractMetadata, staticAnalysisR
     let aiResponse;
     try {
       console.log("Attempting analysis with primary AI model...");
-      aiResponse = await callAIModel(AI_CONFIG.primary, prompt);
+      aiResponse = await callAIModel({...AI_CONFIG.primary, vercelMode: options.vercelMode}, prompt);
     } catch (primaryError) {
       console.warn("Primary AI model failed:", primaryError);
       
       // Try the secondary AI model as backup
       console.log("Falling back to secondary AI model...");
       try {
-        aiResponse = await callAIModel(AI_CONFIG.secondary, prompt);
+        aiResponse = await callAIModel({...AI_CONFIG.secondary, vercelMode: options.vercelMode}, prompt);
       } catch (secondaryError) {
         console.error("Secondary AI model also failed:", secondaryError);
         throw new Error("All AI models failed");
@@ -609,8 +683,8 @@ async function callAIModel(aiConfig, prompt) {
       throw new Error("Missing API key");
     }
     
-    // Drastically reduce prompt size for faster response
-    if (prompt.length > 15000) {
+    // Apply stricter prompt reduction for Vercel mode
+    if (prompt.length > (aiConfig.vercelMode ? 5000 : 15000)) {
       console.log("Significantly reducing prompt size for faster API response");
       // Extract key information like function signatures and structures
       const functionMatches = prompt.match(/function\s+\w+\s*\([^)]*\)\s*{/g) || [];
@@ -629,9 +703,9 @@ async function callAIModel(aiConfig, prompt) {
     const controller = new AbortController();
     const signal = controller.signal;
     const timeoutId = setTimeout(() => {
-      controller.abort();
-      console.log("AI API call timed out after 30 seconds");
-    }, 30000); // 30-second timeout for faster response
+    controller.abort();
+    console.log("AI API call timed out after 8 seconds");
+    }, 8000); // 8-second timeout for Vercel free tier
     
     try {
       console.log(`Making API request to ${aiConfig.endpoint}`);
@@ -646,7 +720,7 @@ async function callAIModel(aiConfig, prompt) {
         body: JSON.stringify({
           model: aiConfig.model,
           messages: [{ role: "user", content: prompt }],
-          max_tokens: 2000, // Reduce token count for faster response
+          max_tokens: 1000, // Reduce token count further for faster response on Vercel free tier
           temperature: 0.2
         }),
         signal

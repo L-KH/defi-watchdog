@@ -15,35 +15,44 @@ function getEtherscanBaseUrl(network) {
     case 'sonic':
       return 'https://api.sonicscan.org';
     case 'linea':
-      return 'https://api.lineascan.build'; // Ajout de l'API Lineascan
+    case 'linea-mainnet':
+      return 'https://api.lineascan.build';
+    case 'linea-testnet':
+    case 'linea-goerli':
+      return 'https://api-testnet.lineascan.build';
     default:
       return 'https://api.etherscan.io';
   }
 }
 function adaptLineaScanResponse(data, address) {
-  if (!data || !data.result || !data.result[0]) {
-    console.warn('No valid data returned from LineaScan API');
+  try {
+    if (!data || !data.result || !data.result[0]) {
+      console.warn('No valid data returned from LineaScan API');
+      return null;
+    }
+    
+    const contractData = data.result[0];
+    console.log('LineaScan response keys:', Object.keys(contractData));
+    
+    return {
+      address,
+      sourceCode: contractData.SourceCode || '',
+      contractName: contractData.ContractName || `Contract-${address.slice(0, 6)}`,
+      compiler: contractData.CompilerVersion || 'Unknown',
+      optimization: contractData.OptimizationUsed === '1',
+      runs: contractData.Runs || '0',
+      constructorArguments: contractData.ConstructorArguments || '',
+      implementationAddress: contractData.Implementation || null,
+      proxyType: contractData.Proxy || '0',
+      isProxy: contractData.Proxy === '1',
+      verifiedAt: contractData.VerifiedTimestamp 
+        ? new Date(parseInt(contractData.VerifiedTimestamp) * 1000).toISOString() 
+        : null
+    };
+  } catch (error) {
+    console.error('Error adapting LineaScan response:', error);
     return null;
   }
-  
-  const contractData = data.result[0];
-  console.log('LineaScan response keys:', Object.keys(contractData));
-  
-  return {
-    address,
-    sourceCode: contractData.SourceCode || '',
-    contractName: contractData.ContractName || `Contract-${address.slice(0, 6)}`,
-    compiler: contractData.CompilerVersion || 'Unknown',
-    optimization: contractData.OptimizationUsed === '1',
-    runs: contractData.Runs || '0',
-    constructorArguments: contractData.ConstructorArguments || '',
-    implementationAddress: contractData.Implementation || null,
-    proxyType: contractData.Proxy || '0',
-    isProxy: contractData.Proxy === '1',
-    verifiedAt: contractData.VerifiedTimestamp 
-      ? new Date(parseInt(contractData.VerifiedTimestamp) * 1000).toISOString() 
-      : null
-  };
 }
 /**
  * Get appropriate API key based on network
@@ -140,13 +149,7 @@ export async function getContractSource(address, network = 'mainnet') {
         verifiedAt: null
       };
     }
-    if (network.toLowerCase() === 'linea') {
-      console.log('Processing LineaScan API response');
-      const adaptedData = adaptLineaScanResponse(data, address);
-      if (adaptedData) {
-        return adaptedData;
-      }
-    }
+    // This block was moved after API call to fix a critical bug
     const baseUrl = getEtherscanBaseUrl(network);
     const url = `${baseUrl}/api?module=contract&action=getsourcecode&address=${address}&apikey=${apiKey}`;
     
@@ -162,6 +165,11 @@ export async function getContractSource(address, network = 'mainnet') {
     const data = await response.json();
     console.log('API response status:', data.status);
     console.log('API response has result:', !!data.result && !!data.result[0]);
+    
+    // Enhanced logging for Linea network debugging
+    if (network.toLowerCase() === 'linea') {
+      console.log('Detailed Linea API response:', JSON.stringify(data).substring(0, 500) + '...');
+    }
     
     // Check for valid API response
     if (data.status !== '1' || !data.result || !data.result[0]) {
@@ -185,6 +193,15 @@ export async function getContractSource(address, network = 'mainnet') {
     if (network.toLowerCase() === 'sonic') {
       console.log('Processing SonicScan API response');
       const adaptedData = adaptSonicScanResponse(data, address);
+      if (adaptedData) {
+        return adaptedData;
+      }
+    }
+    
+    // Handle Linea network specifically
+    if (network.toLowerCase() === 'linea') {
+      console.log('Processing LineaScan API response');
+      const adaptedData = adaptLineaScanResponse(data, address);
       if (adaptedData) {
         return adaptedData;
       }

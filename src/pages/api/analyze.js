@@ -4,8 +4,16 @@ import { saveAuditReport, findMostRecentAuditReport } from '../../lib/localStora
 
 // Active requests tracking
 const activeRequests = new Map();
+
+// Configure Vercel serverless function timeout
 export const config = {
-  maxDuration: 60 // 60 seconds maximum duration for this endpoint
+  maxDuration: 9, // 9 seconds maximum duration for Vercel free tier (leaving 1 second buffer)
+  api: {
+    responseLimit: false, // Don't limit response size
+    bodyParser: {
+      sizeLimit: '2mb' // Increase the body size limit
+    }
+  }
 };
 
 export default async function handler(req, res) {
@@ -27,7 +35,23 @@ export default async function handler(req, res) {
       }
     });
     
-    const { address, network = 'linea', forceRefresh = false, useMultiAI = false, fastMode = true } = req.body;
+    let { address, network = 'linea', forceRefresh = false, useMultiAI = false, fastMode = true, vercelMode = false, skipValidation = false } = req.body;
+    
+    // Auto-detect Vercel deployment
+    const isVercelDeployment = process.env.VERCEL || process.env.VERCEL_URL || req.headers?.host?.includes('vercel.app');
+    if (isVercelDeployment) {
+      console.log('Vercel deployment detected, enforcing optimized settings');
+      vercelMode = true;
+      skipValidation = true;
+      fastMode = true;
+      useMultiAI = false; // Disable multi-AI on Vercel to save time
+    }
+    
+    // Legacy support - treat 'mainnet' as 'linea' for backward compatibility
+    if (network === 'mainnet') {
+      console.log('Converting legacy "mainnet" network parameter to "linea"');
+      network = 'linea';
+    }
 
     // Validate inputs
     if (!address || !address.match(/^0x[a-fA-F0-9]{40}$/)) {
@@ -51,6 +75,9 @@ export default async function handler(req, res) {
         isSafe: false
       });
     }
+    
+    // Normalize address to lowercase
+    address = address.toLowerCase();
     
     // NEW: Redirect Sonic network requests to ZerePy endpoint
     if (network === 'sonic') {
@@ -84,21 +111,26 @@ export default async function handler(req, res) {
         console.log('Falling back to standard analysis for Sonic network');
       }
     } 
-    // Handle Linea (previously 'mainnet') the same way we handled mainnet before
-    else if (network === 'linea' || network === 'mainnet') {
-      // Proceed with regular analysis flow (no changes needed)
-      console.log(`Performing standard analysis for ${network === 'mainnet' ? 'Linea (mainnet)' : 'Linea'} network`);
+    // Handle Linea network analysis
+    else if (network === 'linea') {
+      // Proceed with regular analysis flow
+      console.log('Performing standard analysis for Linea network');
     }
     
     // Create a unique key for this request
-    const requestKey = `${address.toLowerCase()}-${network}-${useMultiAI ? 'multi' : 'single'}`;
+    const requestKey = `${address}-${network}-${useMultiAI ? 'multi' : 'single'}`;
 
     // Check if we already have an in-progress request for this address
     if (activeRequests.has(requestKey)) {
       console.log(`Request already in progress for ${requestKey}, waiting...`);
       // Wait for the existing request to complete
-      const result = await activeRequests.get(requestKey);
-      return res.status(200).json(result);
+      try {
+        const result = await activeRequests.get(requestKey);
+        return res.status(200).json(result);
+      } catch (error) {
+        console.error(`Error waiting for in-progress request: ${error.message}`);
+        // Continue processing as normal if waiting fails
+      }
     }
     
     // Create a promise for this request
@@ -107,7 +139,7 @@ export default async function handler(req, res) {
         // Check if we have a recent audit for this contract
         if (!forceRefresh) {
           const existingAudit = await findMostRecentAuditReport({
-            address: address.toLowerCase(),
+            address: address,
             network,
             // Only use reports from the last 7 days
             createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
@@ -126,23 +158,29 @@ export default async function handler(req, res) {
         // If we get here, we need to perform a new audit
         console.log(`Performing ${fastMode ? 'fast' : 'detailed'} audit for ${address} on ${network}`);
 
-        const timeoutDuration = fastMode ? 45000 : 90000; // 25 seconds for fast mode
+        // Set a shorter timeout for Vercel deployments
+        const timeoutDuration = vercelMode ? 7000 : (fastMode ? 9000 : 15000);
+        
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(() => reject(new Error(`Analysis timed out after ${timeoutDuration/1000} seconds`)), timeoutDuration);
         });
         
-        // Pass fast mode to audit function
+        // Configure audit options based on environment and request
         const auditOptions = { 
-          useMultiAI, 
-          fastMode,
-          skipValidation: fastMode // Skip the secondary AI validation in fast mode
+          useMultiAI: !vercelMode && useMultiAI, // Disable multi-AI on Vercel to save time
+          fastMode: true, // Always use fast mode 
+          skipValidation: skipValidation || vercelMode, // Skip validation on Vercel
+          vercelMode // Pass the Vercel flag to the analyzer
         };
+        
+        console.log('Using audit options:', auditOptions);
         
         // Race between analysis and timeout
         const auditResults = await Promise.race([
           auditSmartContract(address, network, auditOptions),
           timeoutPromise
-        ]);      
+        ]);
+        
         // Save to local storage
         try {
           await saveAuditReport(auditResults);
@@ -162,37 +200,69 @@ export default async function handler(req, res) {
     // Store the promise in the map
     activeRequests.set(requestKey, requestPromise);
     
-    // Wait for the request to complete
-    const result = await requestPromise;
-    
-    // Always remove the request from the map when done
-    activeRequests.delete(requestKey);
-    
-    return res.status(200).json(result);
-  // In your analyze.js API handler's catch block
+    try {
+      // Wait for the request to complete
+      const result = await requestPromise;
+      
+      // Return the result
+      return res.status(200).json(result);
+    } catch (error) {
+      console.error('Error in audit endpoint:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        code: error.code
+      });
+      
+      const errorMessage = error.message || 'Unknown error occurred';
+      const isTimeout = errorMessage.includes('timed out');
+      
+      // Return a structured error response
+      return res.status(isTimeout ? 504 : 500).json({
+        success: false,
+        error: errorMessage,
+        address: req.body.address || '',
+        network: req.body.network || 'linea',
+        contractName: "Error",
+        contractType: "Unknown",
+        analysis: {
+          contractType: "Unknown",
+          overview: isTimeout 
+            ? "The analysis timed out. This contract may be too complex or large to analyze quickly."
+            : "An error occurred during analysis",
+          keyFeatures: [],
+          risks: [],
+          securityScore: 0,
+          riskLevel: "Unknown",
+          explanation: "Error: " + errorMessage
+        },
+        securityScore: 0,
+        riskLevel: "Unknown",
+        isSafe: false
+      });
+    } finally {
+      // Always remove the request from the map when done
+      activeRequests.delete(requestKey);
+    }
   } catch (error) {
-    console.error('Error in audit endpoint:', error);
-    const errorMessage = error.message || 'Unknown error occurred';
-    const isTimeout = errorMessage.includes('timed out');
+    console.error('Critical error in analyze.js handler:', error);
     
-    // Return a structured error response
-    return res.status(isTimeout ? 504 : 500).json({
+    return res.status(500).json({
       success: false,
-      error: errorMessage,
-      address: req.body.address || '',
-      network: req.body.network || 'linea', // Changed default from 'mainnet' to 'linea'
+      error: 'Internal server error',
+      address: req.body?.address || '',
+      network: req.body?.network || 'linea',
       contractName: "Error",
       contractType: "Unknown",
       analysis: {
         contractType: "Unknown",
-        overview: isTimeout 
-          ? "The analysis timed out. This contract may be too complex or large to analyze quickly."
-          : "An error occurred during analysis",
+        overview: "A critical error occurred in the analysis service.",
         keyFeatures: [],
         risks: [],
         securityScore: 0,
         riskLevel: "Unknown",
-        explanation: "Error: " + errorMessage
+        explanation: "The server encountered a critical error. Please try again later."
       },
       securityScore: 0,
       riskLevel: "Unknown",
