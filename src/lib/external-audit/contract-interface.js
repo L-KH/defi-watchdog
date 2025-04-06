@@ -12,7 +12,7 @@ export function createContractInterface(contractData) {
     const abi = extractAbiFromSource(contractData.sourceCode);
     
     // Create contract interface
-    const interface = {
+    const contractInterface = {
       address: contractData.address,
       network: contractData.network,
       abi: abi,
@@ -21,21 +21,21 @@ export function createContractInterface(contractData) {
     };
     
     // Add helper methods
-    interface.getMethod = function(methodName) {
+    contractInterface.getMethod = function(methodName) {
       return abi.find(item => 
         item.type === 'function' && 
         item.name === methodName
       );
     };
     
-    interface.getReadMethods = function() {
+    contractInterface.getReadMethods = function() {
       return abi.filter(item => 
         item.type === 'function' && 
         (item.stateMutability === 'view' || item.stateMutability === 'pure')
       );
     };
     
-    interface.getWriteMethods = function() {
+    contractInterface.getWriteMethods = function() {
       return abi.filter(item => 
         item.type === 'function' && 
         item.stateMutability !== 'view' && 
@@ -43,7 +43,7 @@ export function createContractInterface(contractData) {
       );
     };
     
-    return interface;
+    return contractInterface;
   } catch (error) {
     console.error('Error creating contract interface:', error);
     

@@ -110,8 +110,8 @@ export default function Dashboard() {
     }
   };
   
-  // Helper to format address
-  const formatAddress = (address) => {
+  // Helper to format address (use local version if not provided by useWallet)
+  const formatAddressLocal = (address) => {
     if (!address) return 'Unknown';
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
@@ -560,7 +560,7 @@ export default function Dashboard() {
                           </div>
                         </td>
                         <td style={{ padding: '0.75rem 1rem', color: '#4b5563', fontFamily: 'monospace' }}>
-                          {formatAddress(report.address)}
+                          {formatAddressLocal(report.address)}
                         </td>
                         <td style={{ padding: '0.75rem 1rem', color: '#4b5563', fontSize: '0.875rem' }}>
                           {formatDate(report.date)}

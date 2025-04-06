@@ -7,21 +7,262 @@
   "compiler": "v0.8.18+commit.87f61d96",
   "analysis": {
     "contractType": "Smart Contract",
-    "overview": "This contract was analyzed using Slither (simulated). Some tools encountered errors and used simulated results as fallback. No security issues were detected.",
+    "overview": "This contract was analyzed using Slither. Found 1 high, 9 medium, 3 low risk issues.",
     "keyFeatures": [],
-    "risks": [],
-    "securityScore": 95,
-    "riskLevel": "Safe",
-    "explanation": "Analysis conducted using Slither (simulated). 0 issues found."
+    "risks": [
+      {
+        "severity": "HIGH",
+        "title": "incorrect-exp",
+        "description": "Math.mulDiv(uint256,uint256,uint256) (Contract.sol#57-137) has bitwise-xor operator ^ instead of the exponentiation operator **: \n\t - inverse = (3 * denominator) ^ 2 (Contract.sol#119)\n",
+        "codeReference": "mulDiv, inverse = (3 * denominator) ^ 2",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "MEDIUM",
+        "title": "divide-before-multiply",
+        "description": "Math.mulDiv(uint256,uint256,uint256) (Contract.sol#57-137) performs a multiplication on the result of a division:\n\t- denominator = denominator / twos (Contract.sol#104)\n\t- inverse *= 2 - denominator * inverse (Contract.sol#126)\n",
+        "codeReference": "mulDiv, denominator = denominator / twos, inverse *= 2 - denominator * inverse",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "MEDIUM",
+        "title": "divide-before-multiply",
+        "description": "Math.mulDiv(uint256,uint256,uint256) (Contract.sol#57-137) performs a multiplication on the result of a division:\n\t- prod0 = prod0 / twos (Contract.sol#107)\n\t- result = prod0 * inverse (Contract.sol#134)\n",
+        "codeReference": "mulDiv, prod0 = prod0 / twos, result = prod0 * inverse",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "MEDIUM",
+        "title": "divide-before-multiply",
+        "description": "Math.mulDiv(uint256,uint256,uint256) (Contract.sol#57-137) performs a multiplication on the result of a division:\n\t- denominator = denominator / twos (Contract.sol#104)\n\t- inverse *= 2 - denominator * inverse (Contract.sol#125)\n",
+        "codeReference": "mulDiv, denominator = denominator / twos, inverse *= 2 - denominator * inverse",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "MEDIUM",
+        "title": "divide-before-multiply",
+        "description": "Math.mulDiv(uint256,uint256,uint256) (Contract.sol#57-137) performs a multiplication on the result of a division:\n\t- denominator = denominator / twos (Contract.sol#104)\n\t- inverse *= 2 - denominator * inverse (Contract.sol#127)\n",
+        "codeReference": "mulDiv, denominator = denominator / twos, inverse *= 2 - denominator * inverse",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "MEDIUM",
+        "title": "divide-before-multiply",
+        "description": "Math.mulDiv(uint256,uint256,uint256) (Contract.sol#57-137) performs a multiplication on the result of a division:\n\t- denominator = denominator / twos (Contract.sol#104)\n\t- inverse *= 2 - denominator * inverse (Contract.sol#124)\n",
+        "codeReference": "mulDiv, denominator = denominator / twos, inverse *= 2 - denominator * inverse",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "MEDIUM",
+        "title": "divide-before-multiply",
+        "description": "Math.mulDiv(uint256,uint256,uint256) (Contract.sol#57-137) performs a multiplication on the result of a division:\n\t- denominator = denominator / twos (Contract.sol#104)\n\t- inverse *= 2 - denominator * inverse (Contract.sol#123)\n",
+        "codeReference": "mulDiv, denominator = denominator / twos, inverse *= 2 - denominator * inverse",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "MEDIUM",
+        "title": "divide-before-multiply",
+        "description": "Math.mulDiv(uint256,uint256,uint256) (Contract.sol#57-137) performs a multiplication on the result of a division:\n\t- denominator = denominator / twos (Contract.sol#104)\n\t- inverse = (3 * denominator) ^ 2 (Contract.sol#119)\n",
+        "codeReference": "mulDiv, denominator = denominator / twos, inverse = (3 * denominator) ^ 2",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "MEDIUM",
+        "title": "divide-before-multiply",
+        "description": "Math.mulDiv(uint256,uint256,uint256) (Contract.sol#57-137) performs a multiplication on the result of a division:\n\t- denominator = denominator / twos (Contract.sol#104)\n\t- inverse *= 2 - denominator * inverse (Contract.sol#128)\n",
+        "codeReference": "mulDiv, denominator = denominator / twos, inverse *= 2 - denominator * inverse",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "LOW",
+        "title": "shadowing-local",
+        "description": "NFT.mint(string).tokenURI (Contract.sol#1605) shadows:\n\t- ERC721URIStorage.tokenURI(uint256) (Contract.sol#1488-1504) (function)\n\t- ERC721.tokenURI(uint256) (Contract.sol#1053-1058) (function)\n\t- IERC721Metadata.tokenURI(uint256) (Contract.sol#957) (function)\n",
+        "codeReference": "tokenURI, tokenURI, tokenURI, tokenURI",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "LOW",
+        "title": "shadowing-local",
+        "description": "NFT.constructor(string,string,uint256)._symbol (Contract.sol#1598) shadows:\n\t- ERC721._symbol (Contract.sol#987) (state variable)\n",
+        "codeReference": "_symbol, _symbol",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "LOW",
+        "title": "shadowing-local",
+        "description": "NFT.constructor(string,string,uint256)._name (Contract.sol#1597) shadows:\n\t- ERC721._name (Contract.sol#984) (state variable)\n",
+        "codeReference": "_name, _name",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "INFO",
+        "title": "assembly",
+        "description": "Math.mulDiv(uint256,uint256,uint256) (Contract.sol#57-137) uses assembly\n\t- INLINE ASM (Contract.sol#68-72)\n\t- INLINE ASM (Contract.sol#88-95)\n\t- INLINE ASM (Contract.sol#102-111)\n",
+        "codeReference": "mulDiv",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "INFO",
+        "title": "assembly",
+        "description": "ERC721._checkOnERC721Received(address,address,uint256,bytes) (Contract.sol#1389-1411) uses assembly\n\t- INLINE ASM (Contract.sol#1403-1405)\n",
+        "codeReference": "_checkOnERC721Received",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "INFO",
+        "title": "assembly",
+        "description": "Address._revert(bytes,string) (Contract.sol#680-692) uses assembly\n\t- INLINE ASM (Contract.sol#685-688)\n",
+        "codeReference": "_revert",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "INFO",
+        "title": "assembly",
+        "description": "Strings.toString(uint256) (Contract.sol#367-387) uses assembly\n\t- INLINE ASM (Contract.sol#373-375)\n\t- INLINE ASM (Contract.sol#379-381)\n",
+        "codeReference": "toString",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "INFO",
+        "title": "pragma",
+        "description": "2 different versions of Solidity are used:\n\t- Version constraint ^0.8.0 is used by:\n\t\t-^0.8.0 (Contract.sol#6)\n\t\t-^0.8.0 (Contract.sol#354)\n\t\t-^0.8.0 (Contract.sol#426)\n\t\t-^0.8.0 (Contract.sol#700)\n\t\t-^0.8.0 (Contract.sol#730)\n\t\t-^0.8.0 (Contract.sol#758)\n\t\t-^0.8.0 (Contract.sol#789)\n\t\t-^0.8.0 (Contract.sol#936)\n\t\t-^0.8.0 (Contract.sol#965)\n\t\t-^0.8.0 (Contract.sol#1473)\n\t\t-^0.8.0 (Contract.sol#1537)\n\t\t-^0.8.0 (Contract.sol#1581)\n\t- Version constraint ^0.8.1 is used by:\n\t\t-^0.8.1 (Contract.sol#453)\n",
+        "codeReference": "^0.8.0, ^0.8.0, ^0.8.0, ^0.8.0, ^0.8.0, ^0.8.0, ^0.8.0, ^0.8.0, ^0.8.0, ^0.8.0, ^0.8.0, ^0.8.0, ^0.8.1",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "INFO",
+        "title": "dead-code",
+        "description": "Context._msgData() (Contract.sol#443-445) is never used and should be removed\n",
+        "codeReference": "_msgData",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "INFO",
+        "title": "dead-code",
+        "description": "ERC721.__unsafe_increaseBalance(address,uint256) (Contract.sol#1463-1465) is never used and should be removed\n",
+        "codeReference": "__unsafe_increaseBalance",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "INFO",
+        "title": "dead-code",
+        "description": "ERC721._safeMint(address,uint256,bytes) (Contract.sol#1222-1232) is never used and should be removed\n",
+        "codeReference": "_safeMint",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "INFO",
+        "title": "dead-code",
+        "description": "ERC721._safeMint(address,uint256) (Contract.sol#1214-1216) is never used and should be removed\n",
+        "codeReference": "_safeMint",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "INFO",
+        "title": "solc-version",
+        "description": "Version constraint ^0.8.1 contains known severe issues (https://solidity.readthedocs.io/en/latest/bugs.html)\n\t- FullInlinerNonExpressionSplitArgumentEvaluationOrder\n\t- MissingSideEffectsOnSelectorAccess\n\t- AbiReencodingHeadOverflowWithStaticArrayCleanup\n\t- DirtyBytesArrayToStorage\n\t- DataLocationChangeInInternalOverride\n\t- NestedCalldataArrayAbiReencodingSizeValidation\n\t- SignedImmutables\n\t- ABIDecodeTwoDimensionalArrayMemory\n\t- KeccakCaching.\nIt is used by:\n\t- ^0.8.1 (Contract.sol#453)\n",
+        "codeReference": "^0.8.1",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "INFO",
+        "title": "solc-version",
+        "description": "Version constraint ^0.8.0 contains known severe issues (https://solidity.readthedocs.io/en/latest/bugs.html)\n\t- FullInlinerNonExpressionSplitArgumentEvaluationOrder\n\t- MissingSideEffectsOnSelectorAccess\n\t- AbiReencodingHeadOverflowWithStaticArrayCleanup\n\t- DirtyBytesArrayToStorage\n\t- DataLocationChangeInInternalOverride\n\t- NestedCalldataArrayAbiReencodingSizeValidation\n\t- SignedImmutables\n\t- ABIDecodeTwoDimensionalArrayMemory\n\t- KeccakCaching.\nIt is used by:\n\t- ^0.8.0 (Contract.sol#6)\n\t- ^0.8.0 (Contract.sol#354)\n\t- ^0.8.0 (Contract.sol#426)\n\t- ^0.8.0 (Contract.sol#700)\n\t- ^0.8.0 (Contract.sol#730)\n\t- ^0.8.0 (Contract.sol#758)\n\t- ^0.8.0 (Contract.sol#789)\n\t- ^0.8.0 (Contract.sol#936)\n\t- ^0.8.0 (Contract.sol#965)\n\t- ^0.8.0 (Contract.sol#1473)\n\t- ^0.8.0 (Contract.sol#1537)\n\t- ^0.8.0 (Contract.sol#1581)\n",
+        "codeReference": "^0.8.0, ^0.8.0, ^0.8.0, ^0.8.0, ^0.8.0, ^0.8.0, ^0.8.0, ^0.8.0, ^0.8.0, ^0.8.0, ^0.8.0, ^0.8.0",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "INFO",
+        "title": "low-level-calls",
+        "description": "Low level call in Address.functionCallWithValue(address,bytes,uint256,string) (Contract.sol#577-586):\n\t- (success,returndata) = target.call{value: value}(data) (Contract.sol#584)\n",
+        "codeReference": "functionCallWithValue, (success,returndata) = target.call{value: value}(data)",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "INFO",
+        "title": "low-level-calls",
+        "description": "Low level call in Address.functionDelegateCall(address,bytes,string) (Contract.sol#629-636):\n\t- (success,returndata) = target.delegatecall(data) (Contract.sol#634)\n",
+        "codeReference": "functionDelegateCall, (success,returndata) = target.delegatecall(data)",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "INFO",
+        "title": "low-level-calls",
+        "description": "Low level call in Address.functionStaticCall(address,bytes,string) (Contract.sol#604-611):\n\t- (success,returndata) = target.staticcall(data) (Contract.sol#609)\n",
+        "codeReference": "functionStaticCall, (success,returndata) = target.staticcall(data)",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "INFO",
+        "title": "low-level-calls",
+        "description": "Low level call in Address.sendValue(address,uint256) (Contract.sol#509-514):\n\t- (success,None) = recipient.call{value: amount}() (Contract.sol#512)\n",
+        "codeReference": "sendValue, (success,None) = recipient.call{value: amount}()",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "INFO",
+        "title": "naming-convention",
+        "description": "Parameter NFT.tokensOfOwner(address)._owner (Contract.sol#1620) is not in mixedCase\n",
+        "codeReference": "_owner",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "INFO",
+        "title": "naming-convention",
+        "description": "Function ERC721.__unsafe_increaseBalance(address,uint256) (Contract.sol#1463-1465) is not in mixedCase\n",
+        "codeReference": "__unsafe_increaseBalance",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      },
+      {
+        "severity": "MEDIUM",
+        "title": "immutable-states",
+        "description": "NFT.owner (Contract.sol#1590) should be immutable \n",
+        "codeReference": "owner",
+        "recommendation": "Review and fix the issue.",
+        "tool": "Slither"
+      }
+    ],
+    "securityScore": 13,
+    "riskLevel": "High Risk",
+    "explanation": "Analysis conducted using Slither. 30 issues found."
   },
-  "securityScore": 95,
-  "riskLevel": "Safe",
-  "isSafe": true,
-  "timestamp": "2025-04-06T14:55:10.090Z",
+  "securityScore": 13,
+  "riskLevel": "High Risk",
+  "isSafe": false,
+  "timestamp": "2025-04-06T15:23:35.884Z",
   "etherscanUrl": "https://lineascan.build/address/0xb99e5534d42500eb1d5820fba3bb8416ccb76396",
   "toolsUsed": [
-    "Slither (simulated)"
+    "Slither"
   ],
-  "id": "report-1743951310235",
-  "date": "2025-04-06T14:55:10.235Z"
+  "id": "report-1743953015987",
+  "date": "2025-04-06T15:23:35.987Z"
 }

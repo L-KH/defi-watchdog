@@ -1,7 +1,7 @@
 {
-  "totalContracts": 330,
+  "totalContracts": 334,
   "contractsGrowth": 12,
-  "totalVulnerabilities": 904,
+  "totalVulnerabilities": 937,
   "vulnerabilitiesGrowth": 18,
   "averageScore": 68,
   "scoreGrowth": 4,
@@ -13,5 +13,5 @@
     "Llama",
     "Claude"
   ],
-  "lastUpdated": "2025-04-06T14:55:10.237Z"
+  "lastUpdated": "2025-04-06T15:23:35.989Z"
 }
