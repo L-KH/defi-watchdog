@@ -56,7 +56,7 @@ function generateSonicOptimizations(sourceCode, address) {
   if (sourceCode?.includes('for (') || sourceCode?.includes('for(')) {
     optimizations.push({
       title: 'Optimize Sonic Loop Gas Usage',
-      description: 'Sonic blockchain has different gas costs for loops. Use unchecked increments in loops to save gas.',
+      description: "Sonic blockchain has different gas costs for loops. Use unchecked increments in loops to save gas.",
       codeSnippet: `for (uint i = 0; i < array.length; i++) {
     // loop operations
 }`,
@@ -73,7 +73,7 @@ for (uint i = 0; i < length;) {
   if (sourceCode?.includes('uint256') || sourceCode?.includes('uint')) {
     optimizations.push({
       title: 'Sonic Storage Packing',
-      description: 'Sonic blockchain rewards efficient storage packing with higher gas refunds. Pack related variables together.',
+      description: "Sonic blockchain rewards efficient storage packing with higher gas refunds. Pack related variables together.",
       codeSnippet: `uint256 value1;
 uint256 value2;
 uint256 value3;`,
@@ -89,7 +89,7 @@ uint64 value3;`,
   if (sourceCode?.includes('require(') || sourceCode?.includes('assert(')) {
     optimizations.push({
       title: 'Sonic-Specific Error Handling',
-      description: 'Sonic blockchain has a more efficient error processing system. Use custom errors instead of require with string messages.',
+      description: "Sonic blockchain has a more efficient error processing system. Use custom errors instead of require with string messages.",
       codeSnippet: `require(amount > 0, "Amount must be positive");`,
       sonicOptimizedCode: `// Define custom error at contract level
 error NegativeAmount();
@@ -104,7 +104,7 @@ if (amount <= 0) revert NegativeAmount();`,
   if (sourceCode?.includes('mapping(')) {
     optimizations.push({
       title: 'Sonic Mapping Optimization',
-      description: 'Sonic blockchain has unique mapping storage optimization. Use bytes32 keys for maximum efficiency.',
+      description: "Sonic blockchain has unique mapping storage optimization. Use bytes32 keys for maximum efficiency.",
       codeSnippet: `mapping(address => uint) balances;`,
       sonicOptimizedCode: `// Convert address to bytes32 for storage efficiency
 mapping(bytes32 => uint) balances;
@@ -121,7 +121,7 @@ balances[key] = amount;`,
   if (parseInt(addressEnd, 16) % 3 === 0) {
     optimizations.push({
       title: 'Sonic Event Optimization',
-      description: 'Sonic blockchain allows for more efficient event emission. Use packed event parameters to save gas.',
+      description: "Sonic blockchain allows for more efficient event emission. Use packed event parameters to save gas.",
       codeSnippet: `event Transfer(
     address indexed from,
     address indexed to,
@@ -151,7 +151,7 @@ emit Transfer(from, to, packedData);`,
   if (parseInt(addressEnd, 16) % 2 === 1) {
     optimizations.push({
       title: 'Sonic-Optimized Math Operations',
-      description: 'Sonic blockchain has a specialized math library that costs less gas than standard operations.',
+      description: "Sonic blockchain has a specialized math library that costs less gas than standard operations.",
       codeSnippet: `uint result = (a * b) / c;`,
       sonicOptimizedCode: `// Import Sonic Math library
 import "@sonic/math/SonicMath.sol";
@@ -174,7 +174,7 @@ function getSampleOptimizations(address) {
   return [
     {
       title: 'Sonic Loop Optimization',
-      description: 'Optimize loops for Sonic blockchain to save significant gas costs.',
+      description: "Optimize loops for Sonic blockchain to save significant gas costs.",
       codeSnippet: `for (uint i = 0; i < array.length; i++) {
     // loop body
 }`,
@@ -188,7 +188,7 @@ for (uint i = 0; i < length;) {
     },
     {
       title: 'Sonic Storage Packing',
-      description: 'Pack storage variables to take advantage of Sonic blockchain's storage optimizations.',
+      description: "Pack storage variables to take advantage of Sonic blockchain's storage optimizations.",
       codeSnippet: `uint256 a;
 uint256 b;
 uint256 c;`,
@@ -200,7 +200,7 @@ uint64 c;`,
     },
     {
       title: 'Sonic Custom Errors',
-      description: 'Use custom errors instead of require statements for more efficient error handling on Sonic.',
+      description: "Use custom errors instead of require statements for more efficient error handling on Sonic.",
       codeSnippet: `require(value > 0, "Value must be positive");`,
       sonicOptimizedCode: `error NegativeValue();
 
