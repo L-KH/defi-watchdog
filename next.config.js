@@ -1,30 +1,33 @@
-import type { NextConfig } from 'next';
-
 /**
  * Next.js configuration with optimizations for Vercel deployment
- * Includes specific settings to improve performance of serverless functions
+ * Updated for Next.js 15.2.0 compatibility
  */
-const nextConfig: NextConfig = {
+const nextConfig = {
   reactStrictMode: true,
+  
   images: {
     domains: ['images.unsplash.com', 'via.placeholder.com'],
   },
+  
   // Server-side dependencies
   serverExternalPackages: ['ethers', 'pino', 'mongodb'],
   
-  // API configuration
+  // Experimental features
   experimental: {
     serverActions: {
       bodySizeLimit: '2mb',
     },
   },
+  
   // Optimize serverless functions
   serverRuntimeConfig: {
     // Override to true in production to activate optimizations
     optimizeForVercel: process.env.OPTIMIZE_FOR_VERCEL === 'true' || process.env.VERCEL === '1',
   },
+  
   // Incremental static regeneration default
   staticPageGenerationTimeout: 60,
+  
   // Cache headers for better performance
   async headers() {
     return [
@@ -50,4 +53,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
