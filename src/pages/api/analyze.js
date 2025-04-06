@@ -16,6 +16,31 @@ export const config = {
   }
 };
 
+// Error response with client-side suggestion
+function createTimeoutResponse(address, network) {
+  return {
+    success: false,
+    address: address || '',
+    network: network || 'linea',
+    contractName: "Analysis Timeout",
+    contractType: "Unknown",
+    analysis: {
+      contractType: "Unknown",
+      overview: "The analysis timed out due to contract complexity or server constraints.",
+      keyFeatures: [],
+      risks: [],
+      securityScore: 0,
+      riskLevel: "Unknown",
+      explanation: "Try client-side analysis for complex contracts to avoid timeouts."
+    },
+    securityScore: 0,
+    riskLevel: "Unknown",
+    isSafe: false,
+    useClientAnalysis: true,
+    timestamp: new Date().toISOString()
+  };
+}
+
 export default async function handler(req, res) {
   // Only allow POST method
   if (req.method !== 'POST') {
@@ -161,8 +186,8 @@ export default async function handler(req, res) {
         // Set a shorter timeout for Vercel deployments
         const timeoutDuration = vercelMode ? 7000 : (fastMode ? 9000 : 15000);
         
-        const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error(`Analysis timed out after ${timeoutDuration/1000} seconds`)), timeoutDuration);
+        const timeoutPromise = new Promise((resolve) => {
+          setTimeout(() => resolve(createTimeoutResponse(address, network)), timeoutDuration);
         });
         
         // Configure audit options based on environment and request
@@ -188,6 +213,27 @@ export default async function handler(req, res) {
         } catch (storageError) {
           console.error('Error saving audit report to storage:', storageError);
           // Continue even if saving fails
+        }
+        
+        // ADDED: Submit to audit API to update stats
+        try {
+          // Submit the audit result to update stats
+          const auditSubmitResponse = await fetch(`${process.env.NEXTAUTH_URL || ''}/api/audit/submit`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(auditResults),
+          });
+          
+          if (!auditSubmitResponse.ok) {
+            console.error('Failed to update stats with new audit data');
+          } else {
+            console.log('Successfully updated stats with new audit data');
+          }
+        } catch (statsError) {
+          console.error('Error updating stats:', statsError);
+          // Continue even if stats update fails
         }
         
         return auditResults;

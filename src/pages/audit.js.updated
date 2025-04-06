@@ -1,0 +1,10 @@
+// Same as the original file, but with one addition:
+// In the findings tab, after the section that displays findings by severity, add:
+
+// Add this after the part where findingsBySeverity are displayed by severity
+{/* Add AI Patch Generator */}
+<AIPatchGenerator
+  contractAddress={result.address}
+  network={network}
+  findings={result.analysis.risks || []}
+/>

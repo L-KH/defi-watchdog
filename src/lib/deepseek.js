@@ -1,22 +1,18 @@
 // src/lib/deepseek.js
-import fetch from 'node-fetch';
-
-// Deepseek API configuration
-const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || 'sk-00cdc9ed60f040b29f0719c993b651fa';
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
 
 /**
- * Analyzes smart contract code using Deepseek API
+ * Enhanced Deep Analysis integration with local API adapter support
+ * This module provides a robust interface to AI models with fallback mechanisms
+ */
+
+/**
+ * Analyzes smart contract code using Deepseek AI
  * @param {string} sourceCode - The contract source code
  * @param {string} contractName - The name of the contract
  * @param {object} options - Additional options for the analysis
  * @returns {Promise<object>} The analysis results
  */
 export async function analyzeWithDeepseek(sourceCode, contractName, options = {}) {
-  if (!DEEPSEEK_API_KEY) {
-    throw new Error('Deepseek API key not found. Please check your .env file.');
-  }
-  
   try {
     console.log(`Starting Deepseek analysis for contract: ${contractName}`);
     
@@ -64,44 +60,68 @@ export async function analyzeWithDeepseek(sourceCode, contractName, options = {}
         sourceCode.substring(sourceCode.length - halfSize);
     }
 
-    // Prepare the request payload according to Deepseek's API
-    const payload = {
-      model: options.model || "deepseek-coder",
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: `Please analyze this ${contractName} smart contract:\n\n\`\`\`solidity\n${contractCodeTruncated}\n\`\`\`` }
-      ],
-      temperature: options.temperature || 0.1,
-      max_tokens: options.max_tokens || 4000,
-      response_format: { type: "json_object" }
-    };
+    // Prepare the full prompt
+    const fullPrompt = `${systemPrompt}\n\nPlease analyze this ${contractName} smart contract:\n\n\`\`\`solidity\n${contractCodeTruncated}\n\`\`\``;
 
-    // Make the API request
-    const response = await fetch(DEEPSEEK_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Deepseek API request failed with status ${response.status}: ${errorText}`);
+    // Try using local API adapter first (better for Vercel deployment)
+    try {
+      // Set a timeout for the adapter call to prevent hanging
+      const timeoutDuration = options.timeout || 8000; // 8 seconds default timeout
+      
+      // Create a timeout promise
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('DeepSeek adapter timed out')), timeoutDuration);
+      });
+      
+      // Race between the API call and the timeout
+      const analysis = await Promise.race([
+        callLocalDeepseekAdapter(fullPrompt, options),
+        timeoutPromise
+      ]);
+      
+      return {
+        source: 'Deepseek',
+        ...analysis,
+        rawResponse: undefined // Don't include raw response to save space
+      };
+    } catch (adapterError) {
+      console.warn("Local DeepSeek adapter failed:", adapterError.message);
+      
+      // If this was a timeout error, we should recommend client-side analysis
+      if (adapterError.message.includes('timed out')) {
+        return {
+          source: 'Deepseek',
+          overview: "Analysis timed out. Consider using client-side analysis.",
+          contractType: "Smart Contract",
+          keyFeatures: [],
+          risks: [],
+          securityScore: 0,
+          riskLevel: "Unknown",
+          explanation: "Server-side analysis timed out. Try client-side analysis for better results with complex contracts.",
+          useClientAnalysis: true
+        };
+      }
+      
+      // Fall back to direct API call if adapter fails with a non-timeout error
+      try {
+        return await callDeepseekDirect(fullPrompt, options);
+      } catch (directError) {
+        console.error("Both adapter and direct API failed:", directError.message);
+        
+        // Return a useful error message
+        return {
+          source: 'Deepseek',
+          overview: "Analysis failed. Consider using client-side analysis.",
+          contractType: "Smart Contract",
+          keyFeatures: [],
+          risks: [],
+          securityScore: 0,
+          riskLevel: "Unknown",
+          explanation: "DeepSeek API analysis failed. Try client-side analysis for better results.",
+          useClientAnalysis: true
+        };
+      }
     }
-
-    const data = await response.json();
-    
-    // Extract content from Deepseek response
-    const content = data.choices[0].message.content;
-    const analysis = JSON.parse(content);
-
-    return {
-      source: 'Deepseek',
-      ...analysis,
-      rawResponse: data // Include raw response for debugging
-    };
   } catch (error) {
     console.error("Error analyzing contract with Deepseek:", error);
     
@@ -120,47 +140,128 @@ export async function analyzeWithDeepseek(sourceCode, contractName, options = {}
 }
 
 /**
+ * Call the local DeepSeek adapter API with improved error handling
+ */
+async function callLocalDeepseekAdapter(prompt, options = {}) {
+  try {
+    const response = await fetch('/api/adapter/deepseek', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        prompt,
+        source: options.source || 'contract-analysis',
+        model: options.model || "deepseek-coder",
+        temperature: options.temperature || 0.1,
+        max_tokens: options.max_tokens || 4000
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `DeepSeek adapter failed with status ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    // Check if the content includes a partial analysis flag
+    if (data.content.includes('"status":"partial"') || data.content.includes('"status":"error"')) {
+      const partialResults = JSON.parse(data.content);
+      
+      // If it's a partial result, we should recommend client-side analysis
+      if (partialResults.partial_results) {
+        return {
+          ...partialResults.partial_results,
+          useClientAnalysis: true,
+          explanation: partialResults.message || "Analysis was incomplete. Try client-side analysis instead."
+        };
+      }
+    }
+    
+    return JSON.parse(data.content);
+  } catch (error) {
+    console.error("Error in DeepSeek adapter call:", error.message);
+    throw error;
+  }
+}
+
+/**
+ * Call the DeepSeek API directly as fallback
+ */
+async function callDeepseekDirect(prompt, options = {}) {
+  const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY || options.apiKey;
+  const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
+  
+  if (!DEEPSEEK_API_KEY) {
+    throw new Error('DeepSeek API key not found');
+  }
+
+  const response = await fetch(DEEPSEEK_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+    },
+    body: JSON.stringify({
+      model: options.model || "deepseek-coder",
+      messages: [
+        { role: "user", content: prompt }
+      ],
+      temperature: options.temperature || 0.1,
+      max_tokens: options.max_tokens || 4000,
+      response_format: { type: "json_object" }
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`DeepSeek API request failed with status ${response.status}`);
+  }
+
+  const data = await response.json();
+  
+  // Extract content from Deepseek response
+  const content = data.choices[0].message.content;
+  return JSON.parse(content);
+}
+
+/**
  * Extracts a simple summary from the contract for display purposes
  * @param {string} sourceCode - The contract source code
  * @returns {Promise<string>} A simple explanation of the contract
  */
 export async function getContractSummaryWithDeepseek(sourceCode) {
-  if (!DEEPSEEK_API_KEY) {
-    throw new Error('Deepseek API key not found. Please check your .env file.');
-  }
-  
   try {
-    const payload = {
-      model: "deepseek-coder",
-      messages: [
-        { 
-          role: "system", 
-          content: "You are a helpful assistant that explains smart contracts in simple terms."
+    const prompt = `Summarize what this smart contract does in 2-3 sentences, in very simple terms for non-technical users:\n\n${sourceCode.substring(0, 15000)}`;
+    
+    // Try adapter first
+    try {
+      const response = await fetch('/api/adapter/deepseek', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        { 
-          role: "user", 
-          content: `Summarize what this smart contract does in 2-3 sentences, in very simple terms for non-technical users:\n\n${sourceCode.substring(0, 15000)}`
-        }
-      ],
-      temperature: 0.3,
-      max_tokens: 150
-    };
-
-    const response = await fetch(DEEPSEEK_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      throw new Error(`Deepseek API request failed with status ${response.status}`);
+        body: JSON.stringify({
+          prompt,
+          source: 'contract-summary',
+          model: "deepseek-coder",
+          temperature: 0.3,
+          max_tokens: 150
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`DeepSeek adapter failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data.content.trim();
+    } catch (adapterError) {
+      console.warn("Local DeepSeek adapter failed for summary, using fallback:", adapterError);
+      
+      // Fallback to simple response
+      return "This appears to be a smart contract. For a detailed analysis, continue with the audit process.";
     }
-
-    const data = await response.json();
-    return data.choices[0].message.content.trim();
   } catch (error) {
     console.error("Error summarizing contract with Deepseek:", error);
     return "Could not generate summary for this contract.";
@@ -169,11 +270,9 @@ export async function getContractSummaryWithDeepseek(sourceCode) {
 
 /**
  * Validates findings with Deepseek for consensus
- * @param {string} sourceCode - The contract source code
- * @param {object} aiAnalysisResults - Initial analysis results to validate
- * @returns {Promise<object>} Validated analysis results
  */
 export async function validateFindingsWithDeepseek(sourceCode, aiAnalysisResults) {
+  // Implementation remains the same, but add local adapter support
   try {
     // Only validate if we have findings to validate
     if (!aiAnalysisResults.findings || aiAnalysisResults.findings.length === 0) {
@@ -215,34 +314,35 @@ export async function validateFindingsWithDeepseek(sourceCode, aiAnalysisResults
       }
     `;
     
-    const payload = {
-      model: "deepseek-coder",
-      messages: [
-        { role: "user", content: validationPrompt }
-      ],
-      temperature: 0.2,
-      max_tokens: 4000,
-      response_format: { type: "json_object" }
-    };
-
-    const response = await fetch(DEEPSEEK_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      throw new Error(`Deepseek API validation request failed with status ${response.status}`);
+    // Try using the local adapter first
+    try {
+      const response = await fetch('/api/adapter/deepseek', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: validationPrompt,
+          source: 'findings-validation',
+          model: "deepseek-coder",
+          temperature: 0.2,
+          max_tokens: 4000
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`DeepSeek adapter failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      const validationResults = JSON.parse(data.content);
+      
+      // Merge the validated findings
+      return mergeValidatedFindings(aiAnalysisResults, validationResults);
+    } catch (adapterError) {
+      console.warn("Local DeepSeek adapter failed for validation, returning original findings:", adapterError);
+      return aiAnalysisResults;
     }
-
-    const data = await response.json();
-    const validationResults = JSON.parse(data.choices[0].message.content);
-    
-    // Merge the validated findings into the final results
-    return mergeValidatedFindings(aiAnalysisResults, validationResults);
   } catch (error) {
     console.error("Validation failed with Deepseek:", error);
     // Return original findings if validation fails

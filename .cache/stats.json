@@ -1,0 +1,17 @@
+{
+  "totalContracts": 330,
+  "contractsGrowth": 12,
+  "totalVulnerabilities": 904,
+  "vulnerabilitiesGrowth": 18,
+  "averageScore": 68,
+  "scoreGrowth": 4,
+  "aiAgents": 5,
+  "aiModels": [
+    "OpenAI",
+    "Mistral",
+    "Deepseek",
+    "Llama",
+    "Claude"
+  ],
+  "lastUpdated": "2025-04-06T14:55:10.237Z"
+}

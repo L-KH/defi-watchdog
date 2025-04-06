@@ -39,6 +39,23 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to see the application.
 
+## Recent Updates
+
+### Dashboard Optimizations (April 2025)
+
+The dashboard has been completely rewritten to address several critical issues:
+
+- **Fixed hydration issues** that were causing client/server rendering mismatches
+- **Eliminated refresh loops** by properly managing component lifecycle and state updates
+- **Enhanced data fetching** with parallel requests, proper error handling and recovery
+- **Improved network detection** and better overall stability
+- **Optimized UI components** with cleaner separation between client and server rendering
+
+These improvements make the application much more reliable, especially when:
+- Switching between networks
+- Loading contract data
+- Managing wallet connections
+
 ## Configuration
 
 DeFi Watchdog uses environment variables for configuration. Create a `.env.local` file in the root directory with the following variables:
@@ -103,6 +120,12 @@ If you encounter issues:
 2. Check the network status in the Health API (`/api/health` endpoint)
 3. Ensure the contract address is valid and verified on the selected network
 4. Review server logs for detailed error messages
+
+### Common Issues
+
+- **Dashboard loading loop**: Use the new dashboard implementation at `/new/dashboard` or wait for the automatic redirect
+- **Hydration errors**: Make sure you're using the latest version with the fixes for client/server rendering
+- **Network switching problems**: Try connecting your wallet first, then switch networks in your wallet app
 
 ## License
 

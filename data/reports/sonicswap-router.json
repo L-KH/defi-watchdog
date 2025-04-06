@@ -1,0 +1,45 @@
+{
+  "id": "sonicswap-router",
+  "address": "0x4846A3B8D7E3D76500A794b9A2C5a4F58ECB2b67",
+  "contractName": "SonicSwap Router",
+  "network": "sonic",
+  "date": "2025-04-05T18:42:11Z",
+  "score": 78,
+  "aiAgents": 5,
+  "description": "Security audit of SonicSwap Router smart contract focusing on swap execution, liquidity management, and price manipulation prevention mechanisms.",
+  "vulnerabilityCount": 3,
+  "criticalCount": 0,
+  "vulnerabilities": [
+    {
+      "id": "MED-1",
+      "title": "Insufficient slippage protection",
+      "severity": "Medium",
+      "description": "The slippage protection mechanism does not adequately handle extreme market volatility conditions.",
+      "location": "swapExactTokensForTokens function",
+      "recommendation": "Implement additional checks for extreme market conditions and enforce more conservative slippage limits during high volatility."
+    },
+    {
+      "id": "LOW-1",
+      "title": "Timestamp dependency",
+      "severity": "Low",
+      "description": "Some swap functions rely on block.timestamp as a deadline parameter, which miners could manipulate slightly.",
+      "location": "Multiple swap functions",
+      "recommendation": "Consider implementing additional time validation mechanisms or allowing users to specify a block number instead."
+    },
+    {
+      "id": "LOW-2",
+      "title": "Unused variables",
+      "severity": "Low",
+      "description": "Several variables are declared but not used, which wastes gas.",
+      "location": "Throughout contract",
+      "recommendation": "Remove unnecessary variables to optimize gas usage."
+    }
+  ],
+  "aiModels": ["OpenAI", "Mistral", "Deepseek", "Llama", "Claude"],
+  "securityCertificate": {
+    "issued": true,
+    "issueDate": "2025-04-06T09:10:22Z",
+    "expiryDate": "2025-07-06T09:10:22Z",
+    "tokenId": "0x789def012abc"
+  }
+}

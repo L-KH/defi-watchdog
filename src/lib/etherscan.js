@@ -55,16 +55,46 @@ function adaptLineaScanResponse(data, address) {
   }
 }
 /**
- * Get appropriate API key based on network
+ * Get API key based on network (browser-compatible)
  */
-function getApiKey(network) {
-  if (network.toLowerCase() === 'sonic') {
-    return process.env.SONICSCAN_API_KEY;
+async function getApiKey(network) {
+  if (typeof window !== 'undefined') {
+    // We're in the browser, fetch from our API endpoints
+    try {
+      if (network.toLowerCase() === 'sonic') {
+        const response = await fetch('/api/key/sonicscan');
+        if (response.ok) {
+          const data = await response.json();
+          return data.key;
+        }
+      } else if (network.toLowerCase() === 'linea') {
+        const response = await fetch('/api/key/lineascan');
+        if (response.ok) {
+          const data = await response.json();
+          return data.key;
+        }
+      } else {
+        const response = await fetch('/api/key/etherscan');
+        if (response.ok) {
+          const data = await response.json();
+          return data.key;
+        }
+      }
+    } catch (error) {
+      console.error(`Error fetching ${network} API key:`, error);
+      return null;
+    }
+  } else {
+    // We're on the server, use environment variables
+    if (network.toLowerCase() === 'sonic') {
+      return process.env.SONICSCAN_API_KEY;
+    }
+    if (network.toLowerCase() === 'linea') {
+      return process.env.LINEASCAN_API_KEY || process.env.ETHERSCAN_API_KEY;
+    }
+    return process.env.ETHERSCAN_API_KEY;
   }
-  if (network.toLowerCase() === 'linea') {
-    return process.env.LINEASCAN_API_KEY || process.env.ETHERSCAN_API_KEY; // Utiliser LINEASCAN_API_KEY si disponible
-  }
-  return process.env.ETHERSCAN_API_KEY;
+  return null;
 }
 
 /**
@@ -132,7 +162,7 @@ function adaptSonicScanResponse(data, address) {
  */
 export async function getContractSource(address, network = 'mainnet') {
   try {
-    const apiKey = getApiKey(network);
+    const apiKey = await getApiKey(network);
     if (!apiKey) {
       console.warn(`${network} API key not found. Using fallback data.`);
       return {
@@ -298,7 +328,7 @@ export async function getContractSource(address, network = 'mainnet') {
  */
 export async function getContractInfo(address, network = 'mainnet') {
   try {
-    const apiKey = getApiKey(network);
+    const apiKey = await getApiKey(network);
     if (!apiKey) {
       return {
         address,

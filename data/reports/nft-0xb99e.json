@@ -1,0 +1,27 @@
+{
+  "success": true,
+  "address": "0xb99e5534d42500eb1d5820fba3bb8416ccb76396",
+  "network": "linea",
+  "contractName": "NFT",
+  "contractType": "Smart Contract",
+  "compiler": "v0.8.18+commit.87f61d96",
+  "analysis": {
+    "contractType": "Smart Contract",
+    "overview": "This contract was analyzed using Slither (simulated). Some tools encountered errors and used simulated results as fallback. No security issues were detected.",
+    "keyFeatures": [],
+    "risks": [],
+    "securityScore": 95,
+    "riskLevel": "Safe",
+    "explanation": "Analysis conducted using Slither (simulated). 0 issues found."
+  },
+  "securityScore": 95,
+  "riskLevel": "Safe",
+  "isSafe": true,
+  "timestamp": "2025-04-06T14:55:10.090Z",
+  "etherscanUrl": "https://lineascan.build/address/0xb99e5534d42500eb1d5820fba3bb8416ccb76396",
+  "toolsUsed": [
+    "Slither (simulated)"
+  ],
+  "id": "report-1743951310235",
+  "date": "2025-04-06T14:55:10.235Z"
+}

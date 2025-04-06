@@ -1,0 +1,58 @@
+{
+  "id": "horizondex-router",
+  "address": "0x37ffd1dca528392bff791894607fd938d5d519eb",
+  "contractName": "HorizonDEX Router",
+  "network": "linea",
+  "date": "2025-04-04T11:38:21Z",
+  "score": 62,
+  "aiAgents": 5,
+  "description": "Security evaluation of HorizonDEX Router identified several vulnerabilities that could impact operational safety and should be addressed before production deployment.",
+  "vulnerabilityCount": 5,
+  "criticalCount": 1,
+  "vulnerabilities": [
+    {
+      "id": "CRITICAL-1",
+      "title": "Reentrancy vulnerability in swap function",
+      "severity": "Critical",
+      "description": "The swapAndSend function is vulnerable to a reentrancy attack because it sends ETH to an external address before updating internal state.",
+      "location": "swapAndSend function",
+      "recommendation": "Follow the checks-effects-interactions pattern by updating state variables before making external calls."
+    },
+    {
+      "id": "HIGH-1",
+      "title": "Missing input validation",
+      "severity": "High",
+      "description": "Several functions lack proper input validation, which could lead to unintended behavior.",
+      "location": "Multiple functions",
+      "recommendation": "Implement comprehensive input validation across all public and external functions."
+    },
+    {
+      "id": "MED-1",
+      "title": "Inadequate access control",
+      "severity": "Medium",
+      "description": "Several administrative functions have insufficient access control, allowing unauthorized changes to protocol parameters.",
+      "location": "setFeeAmount, setFeeTo functions",
+      "recommendation": "Implement proper access control with a robust role-based system."
+    },
+    {
+      "id": "LOW-1",
+      "title": "Unbounded loop in path processing",
+      "severity": "Low",
+      "description": "Swap functions process token paths in a loop without bounds checking, potentially allowing gas limit attacks.",
+      "location": "getAmountsOut, swapExactTokensForTokens",
+      "recommendation": "Add a maximum path length check to prevent excessive gas consumption."
+    },
+    {
+      "id": "LOW-2",
+      "title": "Hardcoded gas values",
+      "severity": "Low",
+      "description": "Several functions use hardcoded gas values for external calls which may break during network upgrades.",
+      "location": "Various functions",
+      "recommendation": "Use dynamic gas values or avoid specifying gas for external calls when possible."
+    }
+  ],
+  "aiModels": ["OpenAI", "Mistral", "Deepseek", "Llama", "Claude"],
+  "securityCertificate": {
+    "issued": false
+  }
+}

@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { ethers } from 'ethers';
 
 export const WalletContext = createContext();
@@ -13,9 +13,10 @@ export function WalletProvider({ children }) {
   const [availableWallets, setAvailableWallets] = useState([]);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
   
-// Define chain constants at the top
-const SONIC_CHAIN_ID = 146;
-const LINEA_CHAIN_ID = 59144;
+  // Define chain constants
+  const SONIC_CHAIN_ID = 146;
+  const LINEA_CHAIN_ID = 59144;
+  
   // Use refs to prevent circular dependencies
   const providerRef = useRef();
   providerRef.current = provider;
@@ -37,17 +38,29 @@ const LINEA_CHAIN_ID = 59144;
   }, []);
 
   const handleChainChanged = useCallback((newChainId) => {
-    setChainId(parseInt(newChainId, 16));
-    // Only reload if we already have an account connected
+    // Parse the chain ID to an integer (it comes as hex)
+    const parsedChainId = parseInt(newChainId, 16);
+    setChainId(parsedChainId);
+    
+    // Only reload if we already have an account connected and this isn't the initial load
     if (accountRef.current) {
-      window.location.reload();
+      // Instead of reloading the page, just update the provider and signer
+      if (providerRef.current) {
+        const signer = providerRef.current.getSigner();
+        setSigner(signer);
+      }
     }
   }, []);
 
   const handleDisconnect = useCallback((error) => {
+    console.log("Wallet disconnected", error);
     setAccount(null);
     setSigner(null);
-    setError("Wallet disconnected");
+    if (error) {
+      setError("Wallet disconnected: " + (error.message || "Unknown error"));
+    } else {
+      setError("Wallet disconnected");
+    }
   }, []);
 
   // Detect wallets without updating state directly
@@ -95,6 +108,7 @@ const LINEA_CHAIN_ID = 59144;
         wallets.push({ name, icon, provider: window.ethereum });
       }
     } catch (err) {
+      console.error("Error detecting wallets:", err);
       if (window.ethereum) {
         wallets.push({
           name: "Browser Wallet",
@@ -109,6 +123,8 @@ const LINEA_CHAIN_ID = 59144;
 
   // Update available wallets separately
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const wallets = detectWallets();
     setAvailableWallets(wallets);
     
@@ -127,13 +143,16 @@ const LINEA_CHAIN_ID = 59144;
   const initialized = useRef(false);
   
   useEffect(() => {
-    // Prevent multiple initializations that cause infinite loops
-    if (initialized.current) return;
+    // Skip if already initialized or if window is not defined (SSR)
+    if (initialized.current || typeof window === 'undefined') return;
     
     const initProvider = async () => {
-      if (typeof window === 'undefined' || !window.ethereum) return;
-      
       try {
+        if (!window.ethereum) {
+          console.log("No ethereum provider found");
+          return;
+        }
+        
         const ethereum = window.ethereum;
         
         // Create ethers provider
@@ -141,17 +160,26 @@ const LINEA_CHAIN_ID = 59144;
         setProvider(ethersProvider);
 
         // Get the network/chain ID
-        const network = await ethersProvider.getNetwork().catch(() => ({ chainId: 0 }));
-        setChainId(network.chainId);
+        try {
+          const network = await ethersProvider.getNetwork();
+          setChainId(network.chainId);
+        } catch (networkErr) {
+          console.error("Failed to get network:", networkErr);
+          setChainId(0);
+        }
 
         // Check if already connected
-        const accounts = await ethereum.request({ 
-          method: 'eth_accounts' 
-        }).catch(() => []);
-        
-        if (accounts && accounts.length > 0) {
-          setAccount(accounts[0]);
-          setSigner(ethersProvider.getSigner());
+        try {
+          const accounts = await ethereum.request({ 
+            method: 'eth_accounts' 
+          });
+          
+          if (accounts && accounts.length > 0) {
+            setAccount(accounts[0]);
+            setSigner(ethersProvider.getSigner());
+          }
+        } catch (accountsErr) {
+          console.error("Failed to get accounts:", accountsErr);
         }
 
         // Set up event listeners
@@ -177,7 +205,7 @@ const LINEA_CHAIN_ID = 59144;
     };
   }, [handleAccountsChanged, handleChainChanged, handleDisconnect]);
 
-  // Other functions remain the same but with stable references
+  // Connect to specific wallet provider
   const connectToWallet = useCallback(async (walletProvider) => {
     setIsConnecting(true);
     setError(null);
@@ -274,7 +302,7 @@ const LINEA_CHAIN_ID = 59144;
   }, []);
 
   const switchChain = useCallback(async (chainId) => {
-    if (!providerRef.current || !window.ethereum) {
+    if (!window.ethereum) {
       setError("No wallet connected");
       return false;
     }
@@ -333,29 +361,37 @@ const LINEA_CHAIN_ID = 59144;
       setError(`Failed to switch network: ${error.message}`);
       return false;
     }
-  }, []);
+  }, [SONIC_CHAIN_ID, LINEA_CHAIN_ID]);
 
   const getEthereumObject = useCallback(() => {
-    return window.ethereum;
+    return typeof window !== 'undefined' ? window.ethereum : null;
   }, []);
 
-  // Create a simpler context value without functions in the dependency array
-  const value = {
+  // Memoize the context value to prevent unnecessary re-renders
+  const value = useMemo(() => ({
     account,
     provider,
     signer,
     isConnecting,
     error,
     chainId,
+    availableWallets,
+    connectionAttempts,
+    // Chain ID constants
+    SONIC_CHAIN_ID,
+    LINEA_CHAIN_ID,
+    // Methods
     connect,
     disconnect,
     switchChain,
-    availableWallets,
     connectToWallet,
-    connectionAttempts,
     detectWallets,
     getEthereumObject
-  };
+  }), [
+    account, provider, signer, isConnecting, error, chainId,
+    availableWallets, connectionAttempts, SONIC_CHAIN_ID, LINEA_CHAIN_ID,
+    connect, disconnect, switchChain, connectToWallet, detectWallets, getEthereumObject
+  ]);
 
   return (
     <WalletContext.Provider value={value}>

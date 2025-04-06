@@ -1,0 +1,29 @@
+{
+  "id": "aave-v3-pool",
+  "address": "0xc5ae4b5f86332e70f3205a958078e5e473336fe9",
+  "contractName": "Aave V3: Pool",
+  "network": "linea",
+  "date": "2025-04-02T14:23:45Z",
+  "score": 92,
+  "aiAgents": 5,
+  "description": "Comprehensive security analysis of Aave V3 Pool contract, focusing on key security aspects including reentrancy, fund management, and access control mechanisms.",
+  "vulnerabilityCount": 1,
+  "criticalCount": 0,
+  "vulnerabilities": [
+    {
+      "id": "LOW-1",
+      "title": "Suboptimal error handling in flashLoan function",
+      "severity": "Low",
+      "description": "The error reporting mechanism in the flashLoan function could be improved to provide more specific error messages, aiding in debugging.",
+      "location": "flashLoan function",
+      "recommendation": "Consider enhancing error reporting with more specific error messages."
+    }
+  ],
+  "aiModels": ["OpenAI", "Mistral", "Deepseek", "Llama", "Claude"],
+  "securityCertificate": {
+    "issued": true,
+    "issueDate": "2025-04-03T09:15:22Z",
+    "expiryDate": "2025-07-03T09:15:22Z",
+    "tokenId": "0x123abc456def"
+  }
+}

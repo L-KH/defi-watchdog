@@ -1,0 +1,23 @@
+{
+  "success": false,
+  "address": "0xb99e5534d42500eb1d5820fba3bb8416ccb76396",
+  "network": "linea",
+  "contractName": "Analysis Timeout",
+  "contractType": "Unknown",
+  "analysis": {
+    "contractType": "Unknown",
+    "overview": "The analysis timed out due to contract complexity or server constraints.",
+    "keyFeatures": [],
+    "risks": [],
+    "securityScore": 0,
+    "riskLevel": "Unknown",
+    "explanation": "Try client-side analysis for complex contracts to avoid timeouts."
+  },
+  "securityScore": 0,
+  "riskLevel": "Unknown",
+  "isSafe": false,
+  "useClientAnalysis": true,
+  "timestamp": "2025-04-06T12:16:24.660Z",
+  "_id": "9d906028-6de7-4c33-8974-fe76b9e98c75",
+  "createdAt": "2025-04-06T12:16:24.671Z"
+}

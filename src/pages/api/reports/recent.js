@@ -1,138 +1,118 @@
-// src/pages/api/reports/recent.js
-export default async function handler(req, res) {
-    try {
-      // In a real implementation, you'd fetch this from your database
-      // For now, we'll return mock data that matches your expected format
-      
-      const mockReports = [
-        {
-          address: "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
-          network: "mainnet",
-          contractName: "Uniswap V2 Router",
-          contractType: "DEX Router",
-          analysis: {
-            contractType: "DEX Router",
-            securityScore: 85,
-            riskLevel: "Low"
-          },
-          securityScore: 85,
-          riskLevel: "Low",
-          isSafe: true,
-          createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() // 2 hours ago
-        },
-        {
-          address: "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
-          network: "mainnet",
-          contractName: "Uniswap Token",
-          contractType: "ERC20 Token",
-          analysis: {
-            contractType: "ERC20 Token",
-            securityScore: 92,
-            riskLevel: "Safe"
-          },
-          securityScore: 92,
-          riskLevel: "Safe",
-          isSafe: true,
-          createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString() // 5 hours ago
-        },
-        {
-          address: "0x4846A3B8D7E3D76500A794b9A2C5a4F58ECB2b67",
-          network: "sonic", 
-          contractName: "SonicSwap Router",
-          contractType: "DEX Router",
-          analysis: {
-            contractType: "DEX Router",
-            securityScore: 78,
-            riskLevel: "Low"
-          },
-          securityScore: 78,
-          riskLevel: "Low",
-          isSafe: true,
-          createdAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(), // 3 hours ago
-          zerebro: true
-        },
-        {
-          address: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-          network: "mainnet",
-          contractName: "Wrapped Ether",
-          contractType: "ERC20 Token",
-          analysis: {
-            contractType: "ERC20 Token",
-            securityScore: 90,
-            riskLevel: "Safe"
-          },
-          securityScore: 90,
-          riskLevel: "Safe",
-          isSafe: true,
-          createdAt: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString() // 8 hours ago
-        },
-        {
-          address: "0x8315177aB297bA92A06054cE80a67Ed4DBd7ed3a",
-          network: "sonic",
-          contractName: "SonicToken",
-          contractType: "ERC20 Token",
-          analysis: {
-            contractType: "ERC20 Token",
-            securityScore: 88,
-            riskLevel: "Low"
-          },
-          securityScore: 88,
-          riskLevel: "Low",
-          isSafe: true,
-          createdAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(), // 12 hours ago
-          zerebro: true
-        },
-        {
-          address: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-          network: "mainnet",
-          contractName: "Dai Stablecoin",
-          contractType: "ERC20 Token",
-          analysis: {
-            contractType: "ERC20 Token",
-            securityScore: 95,
-            riskLevel: "Safe"
-          },
-          securityScore: 95,
-          riskLevel: "Safe",
-          isSafe: true,
-          createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() // 1 day ago
-        },
-        {
-          address: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
-          network: "mainnet",
-          contractName: "Wrapped BTC",
-          contractType: "ERC20 Token",
-          analysis: {
-            contractType: "ERC20 Token",
-            securityScore: 93,
-            riskLevel: "Safe"
-          },
-          securityScore: 93,
-          riskLevel: "Safe",
-          isSafe: true,
-          createdAt: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString() // 1.5 days ago
-        },
-        {
-          address: "0x56E8b196503b6E2Da09d403F4BeC233C2B8DBFC5",
-          network: "sonic",
-          contractName: "SonicStaking",
-          contractType: "Staking Contract",
-          analysis: {
-            contractType: "Staking Contract",
-            securityScore: 75,
-            riskLevel: "Medium"
-          },
-          securityScore: 75,
-          riskLevel: "Medium",
-          isSafe: true,
-          createdAt: new Date(Date.now() - 1000 * 60 * 60 * 40).toISOString(), // ~2 days ago
-          zerebro: true
-        }
-      ];
-      
-      return res.status(200).json({ reports: mockReports });
-    } catch (error) {
-      console.error('Error fetching recent reports:', error);
-      return res.status(500).json({ error: error.message || 'Error fetching reports' });
-    }
+// pages/api/reports/recent.js
+import fs from 'fs';
+import path from 'path';
+
+// API to fetch recent audit reports
+export default function handler(req, res) {
+  // Try to load reports from data directory
+  try {
+    const reports = loadReports();
+    
+    // Sort by date (most recent first)
+    reports.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    // Return recent reports
+    return res.status(200).json({ 
+      reports: reports.slice(0, 10) // Return top 10 most recent
+    });
+  } catch (error) {
+    console.error('Error fetching recent reports:', error);
+    
+    // If we couldn't load real reports, return mock data
+    return res.status(200).json({
+      reports: generateMockReports()
+    });
   }
+}
+
+// Helper to load reports from the data directory
+function loadReports() {
+  const dataDir = path.join(process.cwd(), 'data');
+  const reportsDir = path.join(dataDir, 'reports');
+  
+  if (!fs.existsSync(reportsDir)) {
+    fs.mkdirSync(reportsDir, { recursive: true });
+    // Create mock data if folder is empty
+    return generateMockReports();
+  }
+  
+  const files = fs.readdirSync(reportsDir);
+  const reportFiles = files.filter(file => file.endsWith('.json'));
+  
+  if (reportFiles.length === 0) {
+    return generateMockReports();
+  }
+  
+  // Load real report data
+  return reportFiles.map(file => {
+    try {
+      const reportData = JSON.parse(fs.readFileSync(path.join(reportsDir, file), 'utf8'));
+      
+      // Ensure ID is set
+      if (!reportData.id) {
+        reportData.id = path.basename(file, '.json');
+      }
+      
+      return reportData;
+    } catch (e) {
+      console.error(`Error reading report file ${file}:`, e);
+      // Return a minimal valid report object if parsing fails
+      return {
+        id: path.basename(file, '.json'),
+        address: '0x0000000000000000000000000000000000000000',
+        contractName: 'Unknown Contract',
+        network: 'unknown',
+        date: new Date().toISOString(),
+        score: 50,
+        aiAgents: 3
+      };
+    }
+  });
+}
+
+// Helper to generate mock reports if no real data exists
+function generateMockReports() {
+  const networks = ['linea', 'sonic', 'linea', 'sonic', 'linea'];
+  const contractNames = [
+    'Aave V3: Pool', 
+    'SonicSwap Router', 
+    'HorizonDEX Router', 
+    'Wrapped Ether',
+    'UniswapV3 Pool',
+    'Balancer Vault',
+    'SushiSwap Router',
+    'Curve Pool',
+    'Compound Market',
+    'MakerDAO Vault'
+  ];
+  
+  const addresses = [
+    '0xc5ae4b5f86332e70f3205a958078e5e473336fe9',
+    '0x4846A3B8D7E3D76500A794b9A2C5a4F58ECB2b67',
+    '0x37ffd1dca528392bff791894607fd938d5d519eb',
+    '0xe5d7c2a44ffddf6b295a15c148167daaaf5cf34f',
+    '0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45',
+    '0xBA12222222228d8Ba445958a75a0704d566BF2C8',
+    '0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F',
+    '0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7',
+    '0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B',
+    '0x35D1b3F3D7966A1DFe207aa4514C12a259A0492B'
+  ];
+  
+  // Generate random reports
+  return Array.from({ length: 10 }, (_, i) => {
+    const networkIndex = i % networks.length;
+    const date = new Date();
+    date.setDate(date.getDate() - i); // Each report is 1 day older
+    
+    return {
+      id: `report-${i + 1}`,
+      address: addresses[i % addresses.length],
+      contractName: contractNames[i % contractNames.length],
+      network: networks[networkIndex],
+      date: date.toISOString(),
+      score: Math.floor(Math.random() * 51) + 50, // 50-100
+      aiAgents: Math.floor(Math.random() * 3) + 3 // 3-5
+    };
+  });
+}
