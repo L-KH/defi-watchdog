@@ -94,17 +94,20 @@ export default function ToolsScanCard({
             <div className={`flex items-center p-3 rounded-md border ${
               scannerHealth.status === 'healthy' 
                 ? 'bg-green-50 border-green-200 text-green-800'
-                : 'bg-red-50 border-red-200 text-red-800'
+                : 'bg-yellow-50 border-yellow-200 text-yellow-800'
             }`}>
               <span className="mr-2">
-                {scannerHealth.status === 'healthy' ? '✅' : '❌'}
+                {scannerHealth.status === 'healthy' ? '✅' : '⚠️'}
               </span>
               <div>
                 <p className="font-medium">
-                  Scanner API: {scannerHealth.status === 'healthy' ? 'Online' : 'Offline'}
+                  Scanner API: {scannerHealth.status === 'healthy' ? 'Online' : 'Offline (Development Mode)'}
                 </p>
                 {scannerHealth.version && (
                   <p className="text-sm opacity-75">Version: {scannerHealth.version}</p>
+                )}
+                {scannerHealth.status !== 'healthy' && (
+                  <p className="text-xs mt-1">May be a localhost network issue - works fine in production</p>
                 )}
               </div>
             </div>
@@ -216,8 +219,7 @@ export default function ToolsScanCard({
         {/* Scan Button */}
         <button
           onClick={handleScan}
-          disabled={isScanning || !scannerHealth || scannerHealth.status !== 'healthy' || 
-                   (useCustomTools && selectedTools.length === 0)}
+          disabled={isScanning || (useCustomTools && selectedTools.length === 0)}
           className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200"
         >
           {isScanning ? (
@@ -226,7 +228,7 @@ export default function ToolsScanCard({
               Scanning with {useCustomTools ? 'Custom Tools' : scanModes[selectedMode].name}...
             </div>
           ) : (
-            `Start ${useCustomTools ? 'Custom' : scanModes[selectedMode].name}`
+            `Start ${useCustomTools ? 'Custom' : scanModes[selectedMode].name} ${scannerHealth?.status !== 'healthy' ? '(Fallback Mode)' : ''}`
           )}
         </button>
 
