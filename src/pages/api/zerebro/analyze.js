@@ -198,7 +198,7 @@ function generateSampleRisks(addressEnd, network, contractType) {
   const sonicRisks = [
     { severity: 'HIGH', title: 'Sonic Transaction Ordering Dependency', description: 'Contract relies on transaction ordering which is handled differently on Sonic network.' },
     { severity: 'MEDIUM', title: 'Incompatible Gas Model', description: 'Contract uses gas patterns optimized for Ethereum but inefficient on Sonic.' },
-    { severity: 'LOW', title: 'Sonic-Specific Storage Issues', description: 'Storage layout is not optimized for Sonic blockchain's storage model.' }
+    { severity: 'LOW', title: 'Sonic-Specific Storage Issues', description: 'Storage layout is not optimized for Sonic blockchain storage model.' }
   ];
   
   // Get risks for this contract type, or use default risks

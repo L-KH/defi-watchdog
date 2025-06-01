@@ -1,15 +1,18 @@
 /**
- * Next.js configuration with optimizations for Vercel deployment
+ * Next.js configuration optimized for Vercel deployment
  * Updated for Next.js 15.2.0 compatibility
  */
 const nextConfig = {
   reactStrictMode: true,
   
+  // Optimize for Vercel
+  swcMinify: true,
+  
   images: {
     domains: ['images.unsplash.com', 'via.placeholder.com'],
   },
   
-  // Server-side dependencies
+  // Server-side dependencies for Vercel
   serverExternalPackages: ['ethers', 'pino', 'mongodb'],
   
   // Experimental features
@@ -19,13 +22,17 @@ const nextConfig = {
     },
   },
   
-  // Optimize serverless functions
-  serverRuntimeConfig: {
-    // Override to true in production to activate optimizations
-    optimizeForVercel: process.env.OPTIMIZE_FOR_VERCEL === 'true' || process.env.VERCEL === '1',
+  // Environment variables for build
+  env: {
+    CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
   
-  // Incremental static regeneration default
+  // Optimize serverless functions for Vercel
+  serverRuntimeConfig: {
+    optimizeForVercel: true,
+  },
+  
+  // Static generation timeout
   staticPageGenerationTimeout: 60,
   
   // Cache headers for better performance
@@ -37,6 +44,18 @@ const nextConfig = {
           {
             key: 'Cache-Control',
             value: 'no-store, max-age=0',
+          },
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, PUT, DELETE, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization',
           },
         ],
       },
@@ -50,6 +69,23 @@ const nextConfig = {
         ],
       },
     ];
+  },
+  
+  // Webpack configuration for better build performance
+  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+    // Optimize bundle size
+    config.optimization.splitChunks = {
+      chunks: 'all',
+      cacheGroups: {
+        vendor: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          chunks: 'all',
+        },
+      },
+    };
+    
+    return config;
   },
 };
 
