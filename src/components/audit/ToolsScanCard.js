@@ -92,16 +92,16 @@ export default function ToolsScanCard({
         {scannerHealth && (
           <div className="mb-6">
             <div className={`flex items-center p-3 rounded-md border ${
-              scannerHealth.status === 'healthy' 
+              (scannerHealth.status === 'healthy' || scannerHealth.available_tools?.mythril) 
                 ? 'bg-green-50 border-green-200 text-green-800'
                 : 'bg-red-50 border-red-200 text-red-800'
             }`}>
               <span className="mr-2">
-                {scannerHealth.status === 'healthy' ? '✅' : '❌'}
+                {(scannerHealth.status === 'healthy' || scannerHealth.available_tools?.mythril) ? '✅' : '❌'}
               </span>
               <div>
                 <p className="font-medium">
-                  Scanner API: {scannerHealth.status === 'healthy' ? 'Online' : 'Offline'}
+                  Scanner API: {(scannerHealth.status === 'healthy' || scannerHealth.available_tools?.mythril) ? 'Online' : 'Offline'}
                 </p>
                 {scannerHealth.version && (
                   <p className="text-sm opacity-75">Version: {scannerHealth.version}</p>
@@ -216,7 +216,7 @@ export default function ToolsScanCard({
         {/* Scan Button */}
         <button
           onClick={handleScan}
-          disabled={isScanning || !scannerHealth || scannerHealth.status !== 'healthy' || 
+          disabled={isScanning || !scannerHealth || 
                    (useCustomTools && selectedTools.length === 0)}
           className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200"
         >

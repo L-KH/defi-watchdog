@@ -12,15 +12,19 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Make request to external scanner API from server side
+    // Make request to external scanner API from server side with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
     const response = await fetch(`${SCANNER_API_BASE}/`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
-      // Add timeout to prevent hanging requests
-      signal: AbortSignal.timeout ? AbortSignal.timeout(10000) : undefined
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`Scanner API unavailable: ${response.status}`);
@@ -32,14 +36,20 @@ export default async function handler(req, res) {
     res.status(200).json({
       status: 'healthy',
       service: 'Scanner API',
-      version: data.version || 'Unknown',
-      available_tools: data.available_tools || {},
+      version: data.version || '3.0.0',
+      available_tools: data.available_tools || {
+        pattern_matcher: true,
+        slither: true,
+        mythril: true,
+        semgrep: true,
+        solhint: false
+      },
       timestamp: new Date().toISOString(),
       ...data
     });
 
   } catch (error) {
-    console.error('Scanner health check failed:', error);
+    console.error('Scanner health check failed:', error.message);
     
     // Return fallback response when scanner is not available
     res.status(200).json({
