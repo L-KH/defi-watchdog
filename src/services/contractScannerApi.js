@@ -38,7 +38,8 @@ export class ContractScannerAPI {
     }
 
     try {
-      const response = await fetch(`${SCANNER_API_BASE}/`);
+      // Use API route instead of direct call to external scanner
+      const response = await fetch('/api/scanner/health');
       if (!response.ok) {
         throw new Error(`Scanner API unavailable: ${response.status}`);
       }
@@ -71,7 +72,8 @@ export class ContractScannerAPI {
     }
 
     try {
-      const response = await fetch(`${SCANNER_API_BASE}/tools`);
+      // Use API route instead of direct call to external scanner
+      const response = await fetch('/api/scanner/tools');
       if (!response.ok) {
         throw new Error(`Tools info unavailable: ${response.status}`);
       }
@@ -209,7 +211,8 @@ export class ContractScannerAPI {
     }
 
     try {
-      const response = await fetch(`${SCANNER_API_BASE}/scan-text`, {
+      // Use API route instead of direct call to external scanner
+      const response = await fetch('/api/scanner/scan', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
