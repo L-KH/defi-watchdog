@@ -38,8 +38,7 @@ export class ContractScannerAPI {
     }
 
     try {
-      // Use API route instead of direct call to external scanner
-      const response = await fetch('/api/scanner/health');
+      const response = await fetch(`${SCANNER_API_BASE}/`);
       if (!response.ok) {
         throw new Error(`Scanner API unavailable: ${response.status}`);
       }
@@ -72,8 +71,7 @@ export class ContractScannerAPI {
     }
 
     try {
-      // Use API route instead of direct call to external scanner
-      const response = await fetch('/api/scanner/tools');
+      const response = await fetch(`${SCANNER_API_BASE}/tools`);
       if (!response.ok) {
         throw new Error(`Tools info unavailable: ${response.status}`);
       }
@@ -103,20 +101,20 @@ export class ContractScannerAPI {
   static async getContractSource(address, network = 'linea') {
     const cacheKey = this.createCacheKey(address, network);
     
-    // Check cache first (but with shorter cache duration to prevent stale data)
+    // Check cache first
     const cached = requestCache.get(cacheKey);
     if (this.isCacheValid(cached)) {
       console.log('Returning cached contract source for', address);
       return cached.data;
     }
     
-    // Check if request is pending to prevent duplicates
+    // Check if request is pending
     if (pendingRequests.has(cacheKey)) {
       console.log('Waiting for pending contract request for', address);
       try {
         return await pendingRequests.get(cacheKey);
       } catch (error) {
-        // If pending request fails, remove it and try again
+        // If pending request fails, remove it and allow retry
         pendingRequests.delete(cacheKey);
         throw error;
       }
@@ -127,10 +125,9 @@ export class ContractScannerAPI {
     pendingRequests.set(cacheKey, requestPromise);
     
     try {
-      const result = await requestPromise;
-      return result;
+      return await requestPromise;
     } catch (error) {
-      // Remove failed request from pending
+      // Remove failed request from pending to allow retry
       pendingRequests.delete(cacheKey);
       throw error;
     }
@@ -224,8 +221,7 @@ export class ContractScannerAPI {
     }
 
     try {
-      // Use API route instead of direct call to external scanner
-      const response = await fetch('/api/scanner/scan', {
+      const response = await fetch(`${SCANNER_API_BASE}/scan-text`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
