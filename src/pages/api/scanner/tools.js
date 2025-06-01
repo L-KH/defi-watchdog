@@ -12,19 +12,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Use reasonable timeout for production
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
-
+    // Make request to external scanner API from server side
     const response = await fetch(`${SCANNER_API_BASE}/tools`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
-      signal: controller.signal
+      // Add timeout to prevent hanging requests
+      signal: AbortSignal.timeout ? AbortSignal.timeout(10000) : undefined
     });
-
-    clearTimeout(timeoutId);
 
     if (!response.ok) {
       throw new Error(`Tools info unavailable: ${response.status}`);
@@ -34,9 +30,9 @@ export default async function handler(req, res) {
     res.status(200).json(data);
 
   } catch (error) {
-    console.error('Tools info failed:', error.message);
+    console.error('Tools info failed:', error);
     
-    // Return fallback response when scanner is not available (mainly for localhost development)
+    // Return fallback response when scanner is not available
     res.status(200).json({
       available_tools: {
         pattern_matcher: true,
@@ -45,9 +41,8 @@ export default async function handler(req, res) {
         semgrep: false,
         solhint: false
       },
-      error: `Scanner unavailable (${error.message}) - This may be a localhost development issue`,
-      timestamp: new Date().toISOString(),
-      note: 'If this persists in production, check external scanner service'
+      error: error.message,
+      timestamp: new Date().toISOString()
     });
   }
 }

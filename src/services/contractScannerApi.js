@@ -224,45 +224,32 @@ export class ContractScannerAPI {
     }
 
     try {
-      // Try to use API route first, fallback to local analysis if it fails
-      try {
-        const response = await fetch('/api/scanner/scan', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            code: sourceCode,
-            filename,
-            tools,
-            mode,
-            format
-          })
-        });
+      // Use API route instead of direct call to external scanner
+      const response = await fetch('/api/scanner/scan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          code: sourceCode,
+          filename,
+          tools,
+          mode,
+          format
+        })
+      });
 
-        if (response.ok) {
-          if (format === 'json') {
-            const result = await response.json();
-            requestCache.set(scanCacheKey, { data: result, timestamp: Date.now() });
-            return result;
-          } else {
-            return response;
-          }
-        } else {
-          throw new Error('External scanner unavailable');
-        }
-      } catch (externalError) {
-        console.warn('External scanner failed, using fallback analysis:', externalError.message);
-        
-        // Fallback to local pattern-based analysis
-        const fallbackResult = this.performFallbackAnalysis(sourceCode, filename);
-        
-        if (format === 'json') {
-          requestCache.set(scanCacheKey, { data: fallbackResult, timestamp: Date.now() });
-          return fallbackResult;
-        } else {
-          return { json: () => Promise.resolve(fallbackResult) };
-        }
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `Scan failed with status ${response.status}`);
+      }
+
+      if (format === 'json') {
+        const result = await response.json();
+        requestCache.set(scanCacheKey, { data: result, timestamp: Date.now() });
+        return result;
+      } else {
+        return response;
       }
     } catch (error) {
       console.error('Contract scan failed:', error);
@@ -281,100 +268,6 @@ export class ContractScannerAPI {
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash).toString(36);
-  }
-
-  /**
-   * Fallback analysis when external scanner is unavailable
-   */
-  static performFallbackAnalysis(sourceCode, filename) {
-    const vulnerabilities = [];
-    const lines = sourceCode.split('\n');
-    
-    // Basic pattern matching for common vulnerabilities
-    lines.forEach((line, index) => {
-      const lineNum = index + 1;
-      const trimmedLine = line.trim().toLowerCase();
-      
-      // Check for tx.origin usage
-      if (trimmedLine.includes('tx.origin')) {
-        vulnerabilities.push({
-          type: 'Authorization',
-          severity: 'MEDIUM',
-          line: lineNum,
-          description: 'Use of tx.origin for authorization can be unsafe and lead to phishing attacks.',
-          recommendation: 'Use msg.sender instead of tx.origin for authorization checks.',
-          tool: 'Pattern Matcher (Fallback)'
-        });
-      }
-      
-      // Check for unchecked low-level calls
-      if ((trimmedLine.includes('.call(') || trimmedLine.includes('.delegatecall(')) && 
-          !sourceCode.toLowerCase().includes('require(success') && 
-          !sourceCode.toLowerCase().includes('assert(success')) {
-        vulnerabilities.push({
-          type: 'Unchecked Call',
-          severity: 'HIGH',
-          line: lineNum,
-          description: 'Low-level call return value is not checked, which may lead to silent failures.',
-          recommendation: 'Always check the return value of low-level calls with require() or assert().',
-          tool: 'Pattern Matcher (Fallback)'
-        });
-      }
-      
-      // Check for selfdestruct
-      if (trimmedLine.includes('selfdestruct')) {
-        vulnerabilities.push({
-          type: 'Self-Destruct',
-          severity: 'HIGH',
-          line: lineNum,
-          description: 'Contract can be self-destructed, permanently removing it from the blockchain.',
-          recommendation: 'Ensure proper access controls around selfdestruct functionality.',
-          tool: 'Pattern Matcher (Fallback)'
-        });
-      }
-      
-      // Check for timestamp dependence
-      if (trimmedLine.includes('block.timestamp') || trimmedLine.includes('now')) {
-        vulnerabilities.push({
-          type: 'Timestamp Dependence',
-          severity: 'MEDIUM',
-          line: lineNum,
-          description: 'Reliance on block.timestamp can be manipulated by miners within a range.',
-          recommendation: 'Avoid using block.timestamp for critical timing logic.',
-          tool: 'Pattern Matcher (Fallback)'
-        });
-      }
-      
-      // Check for reentrancy patterns
-      if (trimmedLine.includes('.call{value:') && sourceCode.toLowerCase().includes('msg.value')) {
-        vulnerabilities.push({
-          type: 'Potential Reentrancy',
-          severity: 'HIGH',
-          line: lineNum,
-          description: 'External call with value transfer may be vulnerable to reentrancy attacks.',
-          recommendation: 'Use the checks-effects-interactions pattern or reentrancy guards.',
-          tool: 'Pattern Matcher (Fallback)'
-        });
-      }
-    });
-    
-    return {
-      status: 'completed',
-      result: {
-        summary: {
-          total_vulnerabilities: vulnerabilities.length,
-          high: vulnerabilities.filter(v => v.severity === 'HIGH').length,
-          medium: vulnerabilities.filter(v => v.severity === 'MEDIUM').length,
-          low: vulnerabilities.filter(v => v.severity === 'LOW').length
-        },
-        all_vulnerabilities: vulnerabilities,
-        tools_used: ['pattern_matcher_fallback'],
-        scan_mode: 'fallback',
-        note: 'Analysis performed using local pattern matching (external scanner unavailable)'
-      },
-      timestamp: new Date().toISOString(),
-      filename
-    };
   }
 
   /**
@@ -471,13 +364,6 @@ export class ContractScannerAPI {
     requestCache.clear();
     pendingRequests.clear();
     console.log('ContractScannerAPI cache cleared');
-  }
-
-  static clearContractCache(address, network) {
-    const cacheKey = this.createCacheKey(address, network);
-    requestCache.delete(cacheKey);
-    pendingRequests.delete(cacheKey);
-    console.log(`Cache cleared for contract ${address} on ${network}`);
   }
 
   static getCacheStats() {
