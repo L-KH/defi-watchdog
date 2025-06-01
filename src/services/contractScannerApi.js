@@ -114,7 +114,8 @@ export class ContractScannerAPI {
     if (pendingRequests.has(cacheKey)) {
       console.log('Waiting for pending contract request for', address);
       try {
-        return await pendingRequests.get(cacheKey);
+        const result = await pendingRequests.get(cacheKey);
+        return result;
       } catch (error) {
         // If pending request fails, remove it and allow retry
         pendingRequests.delete(cacheKey);
@@ -127,11 +128,15 @@ export class ContractScannerAPI {
     pendingRequests.set(cacheKey, requestPromise);
     
     try {
-      return await requestPromise;
+      const result = await requestPromise;
+      return result;
     } catch (error) {
       // Remove failed request from pending to allow retry
       pendingRequests.delete(cacheKey);
       throw error;
+    } finally {
+      // Always clean up pending request
+      pendingRequests.delete(cacheKey);
     }
   }
 
@@ -197,9 +202,6 @@ export class ContractScannerAPI {
       requestCache.set(cacheKey, { data: errorResult, timestamp: Date.now() });
       
       throw error;
-    } finally {
-      // Always remove from pending requests
-      pendingRequests.delete(cacheKey);
     }
   }
 
@@ -208,22 +210,24 @@ export class ContractScannerAPI {
    */
   static async scanContractCode(sourceCode, filename, options = {}) {
     const {
-      tools = 'all',
+      tools = 'pattern_matcher',
       mode = 'balanced',
       format = 'json'
     } = options;
 
     // Create cache key for scan requests
-    const scanCacheKey = `scan-${this.hashCode(sourceCode)}-${tools}-${mode}-${format}`;
+    const codeHash = this.hashCode(sourceCode);
+    const scanCacheKey = `scan-${codeHash}-${mode}`;
     const cached = requestCache.get(scanCacheKey);
     
     if (this.isCacheValid(cached) && format === 'json') {
-      console.log('Returning cached scan result');
+      console.log('Returning cached scan result for', filename, 'mode:', mode);
       return cached.data;
     }
 
     try {
-      // Use API route instead of direct call to external scanner
+      console.log(`Starting ${mode} scan for ${filename} (${sourceCode.length} characters)`);
+      
       const response = await fetch('/api/scanner/scan', {
         method: 'POST',
         headers: {
@@ -233,25 +237,24 @@ export class ContractScannerAPI {
           code: sourceCode,
           filename,
           tools,
-          mode,
+          mode, // Make sure mode is passed correctly
           format
         })
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-        throw new Error(errorData.error || `Scan failed with status ${response.status}`);
-      }
-
       if (format === 'json') {
         const result = await response.json();
-        requestCache.set(scanCacheKey, { data: result, timestamp: Date.now() });
-        return result;
-      } else {
-        return response;
+        if (result.status === 'completed' && result.result) {
+          console.log(`${mode} scan completed for ${filename} - found ${result.result.summary.total_vulnerabilities} issues in ${result.result.execution_time}`);
+          requestCache.set(scanCacheKey, { data: result, timestamp: Date.now() });
+          return result;
+        }
       }
+      
+      return response;
+      
     } catch (error) {
-      console.error('Contract scan failed:', error);
+      console.error('Scan failed:', error);
       throw error;
     }
   }

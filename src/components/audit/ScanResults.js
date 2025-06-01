@@ -360,7 +360,7 @@ export default function ScanResults({
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
                   <p className="text-gray-500">Scan Mode</p>
-                  <p className="font-medium">{toolsResult.scan_mode || 'Unknown'}</p>
+                  <p className="font-medium">{toolsResult.result?.scan_mode || toolsResult.scan_mode || 'Unknown'}</p>
                 </div>
                 <div>
                   <p className="text-gray-500">Tools Used</p>

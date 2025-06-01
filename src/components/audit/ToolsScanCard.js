@@ -1,6 +1,7 @@
 // src/components/audit/ToolsScanCard.js
 import { useState } from 'react';
 import { ScanUtils } from '../../services/contractScannerApi';
+import LoadingProgress from '../ui/LoadingProgress';
 
 export default function ToolsScanCard({ 
   scannerHealth, 
@@ -19,29 +20,29 @@ export default function ToolsScanCard({
     fast: {
       name: 'Fast Scan',
       description: 'Quick pattern matching and linting',
-      duration: '&lt; 10 seconds',
-      tools: ['pattern_matcher', 'solhint'],
+      duration: '1 second',
+      tools: ['pattern_matcher'],
       color: 'bg-green-50 border-green-200 text-green-800'
     },
     balanced: {
       name: 'Balanced Scan',
       description: 'Comprehensive static analysis',
-      duration: '30-60 seconds',
-      tools: ['pattern_matcher', 'slither', 'semgrep'],
+      duration: '3 seconds',
+      tools: ['pattern_matcher', 'static_analyzer'],
       color: 'bg-blue-50 border-blue-200 text-blue-800'
     },
     deep: {
       name: 'Deep Scan',
-      description: 'Advanced symbolic execution',
-      duration: '2-5 minutes',
-      tools: ['pattern_matcher', 'slither', 'mythril'],
+      description: 'Advanced flow analysis',
+      duration: '8 seconds',
+      tools: ['pattern_matcher', 'static_analyzer', 'flow_analyzer'],
       color: 'bg-purple-50 border-purple-200 text-purple-800'
     },
     comprehensive: {
       name: 'Comprehensive Scan',
       description: 'All available security tools',
-      duration: '5-10 minutes',
-      tools: ['pattern_matcher', 'slither', 'mythril', 'semgrep', 'solhint'],
+      duration: '15 seconds',
+      tools: ['pattern_matcher', 'static_analyzer', 'flow_analyzer', 'semantic_analyzer'],
       color: 'bg-orange-50 border-orange-200 text-orange-800'
     }
   };
@@ -213,6 +214,21 @@ export default function ToolsScanCard({
           </div>
         )}
 
+        {/* Enhanced Loading Display */}
+        {isScanning && (
+          <div className="mb-6">
+            <LoadingProgress
+              isActive={isScanning}
+              duration={scanModes[selectedMode]?.duration === '1 second' ? 1000 : 
+                      scanModes[selectedMode]?.duration === '3 seconds' ? 3000 :
+                      scanModes[selectedMode]?.duration === '8 seconds' ? 8000 :
+                      scanModes[selectedMode]?.duration === '15 seconds' ? 15000 : 3000}
+              mode={selectedMode}
+              message={`Running ${scanModes[selectedMode]?.name || 'scan'}...`}
+            />
+          </div>
+        )}
+
         {/* Scan Button */}
         <button
           onClick={handleScan}
@@ -221,10 +237,7 @@ export default function ToolsScanCard({
           className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200"
         >
           {isScanning ? (
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Scanning with {useCustomTools ? 'Custom Tools' : scanModes[selectedMode].name}...
-            </div>
+            `Scanning in progress...`
           ) : (
             `Start ${useCustomTools ? 'Custom' : scanModes[selectedMode].name}`
           )}

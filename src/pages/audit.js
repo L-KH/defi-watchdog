@@ -46,16 +46,26 @@ export default function EnhancedAuditTool() {
     loadScannerInfo();
   }, []);
 
-  // Process URL parameters
+  // Process URL parameters with debouncing
   useEffect(() => {
-    if (router.query.address) {
-      setAddress(router.query.address);
-      if (router.query.network) {
-        setNetwork(router.query.network);
+    if (router.query.address && !requestInProgress) {
+      const queryAddress = router.query.address;
+      const queryNetwork = router.query.network || 'linea';
+      
+      // Only process if different from current state
+      if (queryAddress !== address || queryNetwork !== network) {
+        setAddress(queryAddress);
+        setNetwork(queryNetwork);
+        
+        // Debounce the handleAddressSubmit call
+        const timer = setTimeout(() => {
+          handleAddressSubmit(queryAddress, queryNetwork);
+        }, 100);
+        
+        return () => clearTimeout(timer);
       }
-      handleAddressSubmit(router.query.address, router.query.network || 'linea');
     }
-  }, [router.query]);
+  }, [router.query.address, router.query.network]);
 
   const loadScannerInfo = async () => {
     try {
@@ -149,11 +159,19 @@ export default function EnhancedAuditTool() {
     setAddress(submittedAddress);
     setNetwork(submittedNetwork);
     
-    // Update URL
-    router.push({
-      pathname: router.pathname,
-      query: { address: submittedAddress, network: submittedNetwork }
-    }, undefined, { shallow: true });
+    // Update URL only if it's different to prevent router loop
+    const currentQuery = router.query;
+    if (currentQuery.address !== submittedAddress || currentQuery.network !== submittedNetwork) {
+      try {
+        await router.replace({
+          pathname: router.pathname,
+          query: { address: submittedAddress, network: submittedNetwork }
+        }, undefined, { shallow: true });
+      } catch (error) {
+        console.warn('Router update failed:', error);
+        // Continue with the rest of the function even if router update fails
+      }
+    }
     
     // Reset previous results
     setToolsScanResult(null);
@@ -270,6 +288,9 @@ export default function EnhancedAuditTool() {
       <Head>
         <title>Smart Contract Security Audit - DeFi Watchdog</title>
         <meta name="description" content="Comprehensive smart contract security analysis using multiple tools and AI" />
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </Head>
       
       <div className="container mx-auto px-4 py-8 mt-10">
