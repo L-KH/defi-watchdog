@@ -1,12 +1,6 @@
 {
   "version": 2,
   "name": "defi-watchdog",
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next@latest"
-    }
-  ],
   "routes": [
     {
       "src": "/api/(.*)",
