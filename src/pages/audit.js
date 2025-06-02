@@ -10,7 +10,7 @@ import { analyzeWithDeepseek } from '../lib/deepseek';
 import ToolsScanCard from '../components/audit/ToolsScanCard';
 import AIScanCard from '../components/audit/AIScanCard';
 import ScanResults from '../components/audit/ScanResults';
-import ApiSetupGuide from '../components/audit/ApiSetupGuide';
+// import ApiSetupGuide from '../components/audit/ApiSetupGuide'; // Removed for production
 
 export default function EnhancedAuditTool() {
   const router = useRouter();
@@ -414,7 +414,7 @@ export default function EnhancedAuditTool() {
                       <li>Make sure the contract is verified on {network === 'sonic' ? 'SonicScan' : 'LineaScan'}</li>
                       <li>Check if the address is correct (40 characters, starts with 0x)</li>
                       <li>Try switching networks if you're unsure</li>
-                      <li>API keys might be missing - check the setup guide below</li>
+                      <li>Ensure the contract is properly verified on the explorer</li>
                     </ul>
                   </div>
                 </div>
@@ -487,14 +487,6 @@ export default function EnhancedAuditTool() {
             }}
           />
         )}
-
-        {/* Setup Guide */}
-        {(!contractSource && address && !isLoadingContract) || (loadingError && loadingError.includes('API key')) ? (
-          <ApiSetupGuide 
-            network={network} 
-            error={loadingError}
-          />
-        ) : null}
 
         {/* How It Works & Tools Overview */}
         <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
