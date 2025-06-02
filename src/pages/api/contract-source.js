@@ -23,17 +23,46 @@ export default async function handler(req, res) {
     
     const apiKey = requiredKeys[network.toLowerCase()];
     if (!apiKey) {
-      return res.status(404).json({ 
-        error: `API key not found for ${network} network. Please add ${network.toUpperCase()}SCAN_API_KEY to your .env.local file.`,
-        setup: {
-          message: 'API setup required',
-          steps: [
-            `Visit https://${network === 'linea' ? 'lineascan.build' : network === 'sonic' ? 'sonicscan.org' : 'etherscan.io'}/apis`,
-            'Register for a free API key',
-            `Add ${network.toUpperCase()}SCAN_API_KEY=your_key_here to .env.local`,
-            'Restart your development server'
-          ]
-        }
+      // For testing/demo purposes, provide a sample contract
+      console.warn(`No API key found for ${network} network, returning sample contract`);
+      return res.status(200).json({
+        success: true,
+        address,
+        network,
+        sourceCode: `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract SimpleStorage {
+    uint256 private _value;
+    mapping(address => uint256) private _balances;
+    
+    function store(uint256 value) public {
+        _value = value;
+    }
+    
+    function retrieve() public view returns (uint256) {
+        return _value;
+    }
+    
+    function deposit() public payable {
+        _balances[msg.sender] += msg.value;
+    }
+    
+    function withdraw() public {
+        uint256 amount = _balances[msg.sender];
+        (bool success, ) = msg.sender.call{value: amount}("");
+        require(success, "Transfer failed");
+        _balances[msg.sender] = 0;
+    }
+    
+    function getBalance(address account) public view returns (uint256) {
+        return _balances[account];
+    }
+}`,
+        contractName: 'SimpleStorage (Demo)',
+        compiler: '0.8.19+commit.7dd6d404',
+        isDemo: true,
+        message: 'This is a demo contract. Add blockchain explorer API keys to .env.local for real contract analysis.'
       });
     }
     

@@ -4,12 +4,12 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Layout from '../components/layout/Layout';
 import ContractScannerAPI, { ScanUtils } from '../services/contractScannerApi';
-import { analyzeWithDeepseek } from '../lib/deepseek';
+import { analyzeWithAI } from '../lib/aiAnalysis';
 
 // Component imports
 import ToolsScanCard from '../components/audit/ToolsScanCard';
 import AIScanCard from '../components/audit/AIScanCard';
-import ScanResults from '../components/audit/ScanResults';
+import EnhancedScanResults from '../components/audit/EnhancedScanResults';
 // import ApiSetupGuide from '../components/audit/ApiSetupGuide'; // Removed for production
 
 export default function EnhancedAuditTool() {
@@ -260,13 +260,14 @@ export default function EnhancedAuditTool() {
       setIsAIScanning(true);
       setAIError(null);
       
-      const result = await analyzeWithDeepseek(
+      const result = await analyzeWithAI(
         contractSource,
         contractInfo.contractName || 'Unknown Contract',
         { 
-          timeout: scanOptions.timeout || 30000,
-          model: scanOptions.model || 'deepseek',
-          analysisType: scanOptions.type || 'comprehensive'
+          ...scanOptions,
+          timeout: scanOptions.timeout || (scanOptions.type === 'full-scan' ? 300000 : 120000),
+          temperature: 0.1,
+          max_tokens: scanOptions.type === 'full-scan' ? 6000 : 4000
         }
       );
       
@@ -468,23 +469,10 @@ export default function EnhancedAuditTool() {
 
         {/* Results Section */}
         {(toolsScanResult || aiScanResult) && (
-          <ScanResults
+          <EnhancedScanResults
             toolsResult={toolsScanResult}
             aiResult={aiScanResult}
             contractInfo={contractInfo}
-            onDownloadReport={(format) => {
-              if (toolsScanResult) {
-                const timestamp = new Date().toISOString().split('T')[0];
-                const filename = `${contractInfo.contractName || 'contract'}_security_report_${timestamp}.${format}`;
-                ContractScannerAPI.downloadReport(toolsScanResult, format, filename)
-                  .catch(error => {
-                    console.error('Download failed:', error);
-                    alert(`Download failed: ${error.message}`);
-                  });
-              } else {
-                alert('No scan results available for download');
-              }
-            }}
           />
         )}
 
