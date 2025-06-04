@@ -1,15 +1,16 @@
-// src/pages/audit.js - CLEAN VERSION
+// src/pages/audit.js
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Layout from '../components/layout/Layout';
-import ContractScannerAPI from '../services/contractScannerApi';
+import ContractScannerAPI, { ScanUtils } from '../services/contractScannerApi';
 import { analyzeWithAI } from '../lib/aiAnalysis';
 
-// Component imports - NO APIStatusCard reference
+// Component imports
 import ToolsScanCard from '../components/audit/ToolsScanCard';
 import AIScanCard from '../components/audit/AIScanCard';
 import EnhancedScanResults from '../components/audit/EnhancedScanResults';
+// import ApiSetupGuide from '../components/audit/ApiSetupGuide'; // Removed for production
 
 export default function EnhancedAuditTool() {
   const router = useRouter();
@@ -303,7 +304,7 @@ export default function EnhancedAuditTool() {
           </p>
         </div>
 
-        {/* Contract Input and Analysis Interface */}
+        {/* Unified Contract Input and Analysis Interface */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
           {/* Address Input Section */}
           <div className="mb-6">

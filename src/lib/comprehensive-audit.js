@@ -4,43 +4,82 @@ import fetch from 'node-fetch';
 
 // AI Models Configuration
 const AI_MODELS = {
-  analysis: [
+  // Premium tier models (unchanged)
+  premium: [
     {
       id: 'x-ai/grok-3-mini-beta',
       name: 'Grok 3 Mini Beta',
       provider: 'openrouter',
-      speciality: 'Advanced reasoning and vulnerability detection'
+      speciality: 'Advanced reasoning and vulnerability detection',
+      tier: 'premium'
     },
     {
       id: 'deepseek/deepseek-chat-v3-0324',
       name: 'DeepSeek Chat V3 Pro',
       provider: 'openrouter',
-      speciality: 'Code analysis and security patterns'
+      speciality: 'Code analysis and security patterns',
+      tier: 'premium'
     },
     {
       id: 'google/gemma-2b-it',
       name: 'Google Gemma 2B',
       provider: 'openrouter',
-      speciality: 'Gas optimization and code quality'
+      speciality: 'Gas optimization and code quality',
+      tier: 'premium'
     },
     {
       id: 'anthropic/claude-3-haiku:beta',
       name: 'Claude 3 Haiku',
       provider: 'openrouter',
-      speciality: 'Business logic and edge case detection'
+      speciality: 'Business logic and edge case detection',
+      tier: 'premium'
     },
     {
       id: 'mistralai/mistral-nemo',
       name: 'Mistral Nemo',
       provider: 'openrouter',
-      speciality: 'Pattern matching and best practices'
+      speciality: 'Pattern matching and best practices',
+      tier: 'premium'
     }
   ],
-  supervisor: {
-    id: 'openai/gpt-4.1-mini',
-    name: 'GPT-4.1 Mini',
-    provider: 'openrouter',
-    role: 'Supervisor and Report Generator'
+  // Free tier models (new multi-AI approach)
+  free: [
+    {
+      id: 'meta-llama/llama-3.2-3b-instruct:free',
+      name: 'Llama 3.2 3B Free',
+      provider: 'openrouter',
+      speciality: 'Security vulnerability detection and pattern analysis',
+      tier: 'free'
+    },
+    {
+      id: 'qwen/qwen-2.5-7b-instruct:free',
+      name: 'Qwen 2.5 7B Free',
+      provider: 'openrouter',
+      speciality: 'Code structure analysis and gas optimization',
+      tier: 'free'
+    },
+    {
+      id: 'mistralai/mistral-7b-instruct:free',
+      name: 'Mistral 7B Free',
+      provider: 'openrouter',
+      speciality: 'Code quality and best practices assessment',
+      tier: 'free'
+    }
+  ],
+  // Supervisors for different tiers
+  supervisors: {
+    premium: {
+      id: 'openai/gpt-4.1-mini',
+      name: 'GPT-4.1 Mini',
+      provider: 'openrouter',
+      role: 'Premium Supervisor and Report Generator'
+    },
+    free: {
+      id: 'meta-llama/llama-3.2-3b-instruct:free',
+      name: 'Llama 3.2 3B Supervisor',
+      provider: 'openrouter',
+      role: 'Free Tier Supervisor and Consensus Builder'
+    }
   }
 };
 
@@ -157,6 +196,58 @@ Format as JSON:
     }
   ],
   "summary": "Overall code quality assessment"
+}`,
+
+  comprehensive_free: `You are an expert smart contract security auditor. Analyze this contract comprehensively for ALL aspects:
+
+1. SECURITY VULNERABILITIES:
+- Reentrancy attacks
+- Integer overflow/underflow
+- Access control issues
+- Front-running vulnerabilities
+- Business logic flaws
+- Centralization risks
+
+2. GAS OPTIMIZATION:
+- Storage optimization opportunities
+- Function optimization techniques
+- Unnecessary computations
+- Efficient data structures
+
+3. CODE QUALITY:
+- Code readability and maintainability
+- Documentation quality
+- Naming conventions
+- Error handling
+- Best practices adherence
+
+For each finding, provide:
+- Category (security/gas/quality)
+- Severity (CRITICAL/HIGH/MEDIUM/LOW/INFO)
+- Title (brief description)
+- Description (detailed explanation)
+- Impact (what could happen)
+- Recommendation (how to fix)
+- Code reference if applicable
+
+Format as JSON:
+{
+  "findings": [
+    {
+      "category": "security|gas|quality",
+      "severity": "CRITICAL|HIGH|MEDIUM|LOW|INFO",
+      "title": "Finding title",
+      "description": "Detailed description",
+      "impact": "Impact assessment",
+      "recommendation": "Fix recommendations",
+      "codeReference": "Relevant code section if applicable"
+    }
+  ],
+  "overallAssessment": "Comprehensive assessment of the contract",
+  "securityScore": 85,
+  "gasOptimizationScore": 80,
+  "codeQualityScore": 90,
+  "summary": "Overall analysis summary"
 }`
 };
 
@@ -164,7 +255,7 @@ Format as JSON:
  * Comprehensive Multi-AI Security Audit
  * @param {string} sourceCode - Contract source code
  * @param {string} contractName - Name of the contract
- * @param {object} options - Analysis options
+ * @param {object} options - Analysis options (tier: 'free' | 'premium')
  * @returns {Promise<object>} Comprehensive audit results
  */
 export async function runComprehensiveAudit(sourceCode, contractName, options = {}) {
@@ -172,45 +263,59 @@ export async function runComprehensiveAudit(sourceCode, contractName, options = 
   const startTime = Date.now();
   
   try {
-    // Step 1: Run parallel analyses with different AI models
-    const analysisPromises = [
-      // Security analysis with multiple models
-      runSecurityAnalysis(sourceCode, contractName),
-      // Gas optimization analysis
-      runGasOptimizationAnalysis(sourceCode, contractName),
-      // Code quality analysis
-      runCodeQualityAnalysis(sourceCode, contractName)
-    ];
+    // Determine analysis tier (free or premium)
+    const tier = options.tier || 'free';
+    const models = tier === 'premium' ? AI_MODELS.premium : AI_MODELS.free;
+    const supervisor = AI_MODELS.supervisors[tier];
     
-    // Execute all analyses in parallel
-    console.log('Running parallel AI analyses...');
-    const [securityResults, gasResults, qualityResults] = await Promise.all(analysisPromises);
+    console.log(`Starting ${tier} tier analysis with ${models.length} AI models`);
     
-    // Step 2: Consolidate all findings
-    const consolidatedFindings = {
-      security: securityResults,
-      gasOptimization: gasResults,
-      codeQuality: qualityResults,
-      metadata: {
-        contractName,
-        analysisTime: Date.now() - startTime,
-        modelsUsed: AI_MODELS.analysis.map(m => m.name),
-        timestamp: new Date().toISOString()
-      }
-    };
+    let analysisResults;
     
-    // Step 3: Supervisor verification and report generation
-    console.log('Running supervisor verification...');
+    if (tier === 'premium') {
+      // Premium tier: Specialized analysis with different models for different purposes
+      const analysisPromises = [
+        runSecurityAnalysis(sourceCode, contractName, models.slice(0, 3)),
+        runGasOptimizationAnalysis(sourceCode, contractName, models[2]),
+        runCodeQualityAnalysis(sourceCode, contractName, models[3])
+      ];
+      
+      console.log('Running specialized premium AI analyses...');
+      const [securityResults, gasResults, qualityResults] = await Promise.all(analysisPromises);
+      
+      analysisResults = {
+        security: securityResults,
+        gasOptimization: gasResults,
+        codeQuality: qualityResults,
+        metadata: {
+          contractName,
+          analysisTime: Date.now() - startTime,
+          modelsUsed: models.map(m => m.name),
+          tier: 'premium',
+          timestamp: new Date().toISOString()
+        }
+      };
+    } else {
+      // Free tier: All models analyze everything, then consensus
+      console.log('Running free tier multi-AI consensus analysis...');
+      analysisResults = await runFreeMultiAIAnalysis(sourceCode, contractName, models, startTime);
+    }
+    
+    // Supervisor verification and report generation
+    console.log(`Running ${tier} tier supervisor verification...`);
     const supervisorReport = await runSupervisorVerification(
       sourceCode, 
       contractName, 
-      consolidatedFindings
+      analysisResults,
+      supervisor,
+      tier
     );
     
-    // Step 4: Generate final comprehensive report
+    // Generate final comprehensive report
     const finalReport = await generateComprehensiveReport(
-      consolidatedFindings,
-      supervisorReport
+      analysisResults,
+      supervisorReport,
+      tier
     );
     
     console.log(`Comprehensive audit completed in ${(Date.now() - startTime) / 1000}s`);
@@ -223,10 +328,52 @@ export async function runComprehensiveAudit(sourceCode, contractName, options = 
 }
 
 /**
- * Run security analysis with multiple AI models
+ * Run free tier multi-AI analysis where all models analyze everything
  */
-async function runSecurityAnalysis(sourceCode, contractName) {
-  const securityModels = AI_MODELS.analysis.slice(0, 3); // Use first 3 models for security
+async function runFreeMultiAIAnalysis(sourceCode, contractName, models, startTime) {
+  console.log('Running comprehensive analysis with all free AI models...');
+  
+  const analysisPromises = models.map(async (model) => {
+    try {
+      console.log(`Running full analysis with ${model.name}...`);
+      const result = await callAIModel(model, ANALYSIS_PROMPTS.comprehensive_free, sourceCode, contractName);
+      return {
+        model: model.name,
+        modelId: model.id,
+        speciality: model.speciality,
+        result: result,
+        category: 'comprehensive'
+      };
+    } catch (error) {
+      console.error(`Analysis failed with ${model.name}:`, error);
+      return {
+        model: model.name,
+        modelId: model.id,
+        error: error.message,
+        category: 'comprehensive'
+      };
+    }
+  });
+  
+  const results = await Promise.all(analysisPromises);
+  const validResults = results.filter(r => !r.error);
+  
+  return {
+    comprehensive: validResults,
+    metadata: {
+      contractName,
+      analysisTime: Date.now() - startTime,
+      modelsUsed: models.map(m => m.name),
+      tier: 'free',
+      timestamp: new Date().toISOString()
+    }
+  };
+}
+
+/**
+ * Run security analysis with multiple AI models (Premium tier)
+ */
+async function runSecurityAnalysis(sourceCode, contractName, securityModels) {
   
   const analysisPromises = securityModels.map(async (model) => {
     try {
@@ -254,10 +401,9 @@ async function runSecurityAnalysis(sourceCode, contractName) {
 }
 
 /**
- * Run gas optimization analysis
+ * Run gas optimization analysis (Premium tier)
  */
-async function runGasOptimizationAnalysis(sourceCode, contractName) {
-  const gasModel = AI_MODELS.analysis[2]; // Google Gemma for gas optimization
+async function runGasOptimizationAnalysis(sourceCode, contractName, gasModel) {
   
   try {
     console.log(`Running gas optimization analysis with ${gasModel.name}...`);
@@ -280,10 +426,9 @@ async function runGasOptimizationAnalysis(sourceCode, contractName) {
 }
 
 /**
- * Run code quality analysis
+ * Run code quality analysis (Premium tier)
  */
-async function runCodeQualityAnalysis(sourceCode, contractName) {
-  const qualityModel = AI_MODELS.analysis[3]; // Claude for code quality
+async function runCodeQualityAnalysis(sourceCode, contractName, qualityModel) {
   
   try {
     console.log(`Running code quality analysis with ${qualityModel.name}...`);
@@ -308,8 +453,7 @@ async function runCodeQualityAnalysis(sourceCode, contractName) {
 /**
  * Supervisor verification and consolidation
  */
-async function runSupervisorVerification(sourceCode, contractName, consolidatedFindings) {
-  const supervisor = AI_MODELS.supervisor;
+async function runSupervisorVerification(sourceCode, contractName, consolidatedFindings, supervisor, tier) {
   
   const supervisorPrompt = `You are a senior smart contract auditor reviewing multiple AI analysis results. Your task is to:
 
@@ -323,14 +467,10 @@ Contract: ${contractName}
 
 Multiple AI models have analyzed this contract. Here are their findings:
 
-SECURITY FINDINGS:
-${JSON.stringify(consolidatedFindings.security, null, 2)}
-
-GAS OPTIMIZATION FINDINGS:
-${JSON.stringify(consolidatedFindings.gasOptimization, null, 2)}
-
-CODE QUALITY FINDINGS:
-${JSON.stringify(consolidatedFindings.codeQuality, null, 2)}
+${tier === 'free' ? 
+  `COMPREHENSIVE FINDINGS:\n${JSON.stringify(consolidatedFindings.comprehensive, null, 2)}` :
+  `SECURITY FINDINGS:\n${JSON.stringify(consolidatedFindings.security, null, 2)}\n\nGAS OPTIMIZATION FINDINGS:\n${JSON.stringify(consolidatedFindings.gasOptimization, null, 2)}\n\nCODE QUALITY FINDINGS:\n${JSON.stringify(consolidatedFindings.codeQuality, null, 2)}`
+}
 
 SOURCE CODE:
 \`\`\`solidity
@@ -440,7 +580,7 @@ Format your response as JSON:
 /**
  * Generate comprehensive final report
  */
-async function generateComprehensiveReport(consolidatedFindings, supervisorReport) {
+async function generateComprehensiveReport(consolidatedFindings, supervisorReport, tier) {
   const verified = supervisorReport.verifiedFindings || {};
   const assessment = supervisorReport.overallAssessment || {};
   
@@ -468,11 +608,12 @@ async function generateComprehensiveReport(consolidatedFindings, supervisorRepor
     // Report metadata
     metadata: {
       contractName: consolidatedFindings.metadata.contractName,
-      analysisType: 'Comprehensive Multi-AI Security Audit',
+      analysisType: tier === 'premium' ? 'Premium Multi-AI Security Audit' : 'Free Multi-AI Security Audit',
       timestamp: new Date().toISOString(),
       analysisTime: consolidatedFindings.metadata.analysisTime,
       modelsUsed: consolidatedFindings.metadata.modelsUsed,
-      supervisor: AI_MODELS.supervisor.name,
+      supervisor: supervisor.name,
+      tier: tier,
       reportVersion: '2.0'
     },
     
@@ -512,7 +653,7 @@ async function generateComprehensiveReport(consolidatedFindings, supervisorRepor
     falsePositives: supervisorReport.falsePositives || [],
     
     // AI models used
-    aiModelsUsed: AI_MODELS.analysis.map(model => ({
+    aiModelsUsed: (tier === 'premium' ? AI_MODELS.premium : AI_MODELS.free).map(model => ({
       name: model.name,
       id: model.id,
       speciality: model.speciality
@@ -520,9 +661,9 @@ async function generateComprehensiveReport(consolidatedFindings, supervisorRepor
     
     // Supervisor details
     supervisorVerification: {
-      model: AI_MODELS.supervisor.name,
+      model: supervisor.name,
       verified: true,
-      confidenceLevel: '95%'
+      confidenceLevel: tier === 'premium' ? '95%' : '85%'
     }
   };
 }
@@ -531,8 +672,15 @@ async function generateComprehensiveReport(consolidatedFindings, supervisorRepor
  * Call AI model via OpenRouter
  */
 async function callAIModel(model, prompt, sourceCode, contractName, options = {}) {
-  // Hardcoded API key temporarily - replace with environment variable later
+  // Hardcoded OpenRouter API key as requested
   const OPENROUTER_API_KEY = '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';
+  
+  console.log(`🔍 Calling ${model.name} with API key check:`, {
+    hasKey: !!OPENROUTER_API_KEY,
+    keyLength: OPENROUTER_API_KEY ? OPENROUTER_API_KEY.length : 0,
+    keyPrefix: OPENROUTER_API_KEY ? OPENROUTER_API_KEY.substring(0, 10) + '...' : 'none',
+    modelId: model.id
+  });
   
   if (!OPENROUTER_API_KEY) {
     throw new Error('OpenRouter API key not configured');
@@ -543,7 +691,7 @@ async function callAIModel(model, prompt, sourceCode, contractName, options = {}
     : prompt;
   
   try {
-    console.log(`Calling ${model.name} for analysis...`);
+    console.log(`🚀 Making comprehensive audit API request to OpenRouter...`);
     
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',

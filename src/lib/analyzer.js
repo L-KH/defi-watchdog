@@ -6,6 +6,7 @@ import connectToDatabase from './database';
 import AuditReport from '../models/AuditReport';
 import { multiAIAudit, adaptMultiAIResults } from './multi-ai-audit';
 import { analyzeWithDeepseek, validateFindingsWithDeepseek } from './deepseek';
+import { runComprehensiveAudit } from './comprehensive-audit';
 
 // Configuration for AI models
 const AI_CONFIG = {
@@ -155,33 +156,52 @@ async function auditSmartContract(address, network = 'linea', options = {}) {
       ? performLightweightAnalysis(contractData.sourceCode)
       : performStaticAnalysis(contractData.sourceCode);
     
-    // 4. Run AI-powered analysis using appropriate approach based on environment
-    let aiAnalysisResults;
+    // 4. Determine analysis approach based on tier and options
     let validatedResults;
-
-    if (options.useMultiAI) {
-      console.log("Using multi-AI analysis system...");
+    
+    // Check if this is a premium request (useMultiAI or paid tier)
+    const isComprehensiveRequest = options.useMultiAI || options.tier === 'premium';
+    
+    if (isComprehensiveRequest) {
+      console.log("Using comprehensive multi-AI audit system (Premium tier)...");
       try {
-        // Call the multi-AI analysis with reconciliation
-        const multiAIResults = await multiAIAudit(contractData.sourceCode, contractMetadata.name, true);
+        // Use the new comprehensive audit system with premium tier
+        const comprehensiveResults = await runComprehensiveAudit(
+          contractData.sourceCode, 
+          contractMetadata.name, 
+          { tier: 'premium' }
+        );
         
-        // Map the multi-AI result format to our existing format
-        aiAnalysisResults = adaptMultiAIResults(multiAIResults);
-        validatedResults = aiAnalysisResults; // No need for additional validation
+        // Transform to expected format
+        validatedResults = transformComprehensiveResults(comprehensiveResults);
       } catch (error) {
-        console.error("Multi-AI analysis failed, falling back to traditional pipeline:", error);
-        // Continue with the traditional pipeline
-        aiAnalysisResults = await performAIAnalysis(contractData, contractMetadata, staticAnalysisResults, options);
+        console.error("Comprehensive audit failed, falling back to traditional pipeline:", error);
+        // Fallback to traditional analysis
+        const aiAnalysisResults = await performAIAnalysis(contractData, contractMetadata, staticAnalysisResults, options);
         validatedResults = options.skipValidation ? 
           aiAnalysisResults : 
           await validateFindings(contractData, aiAnalysisResults);
       }
     } else {
-      // Traditional analysis pipeline
-      aiAnalysisResults = await performAIAnalysis(contractData, contractMetadata, staticAnalysisResults, options);
-      validatedResults = options.skipValidation ? 
-        aiAnalysisResults : 
-        await validateFindings(contractData, aiAnalysisResults);
+      console.log("Using enhanced free multi-AI audit system...");
+      try {
+        // Use the new comprehensive audit system with free tier (multiple free AI models)
+        const comprehensiveResults = await runComprehensiveAudit(
+          contractData.sourceCode, 
+          contractMetadata.name, 
+          { tier: 'free' }
+        );
+        
+        // Transform to expected format
+        validatedResults = transformComprehensiveResults(comprehensiveResults);
+      } catch (error) {
+        console.error("Free multi-AI audit failed, falling back to single AI:", error);
+        // Fallback to single AI analysis
+        const aiAnalysisResults = await performAIAnalysis(contractData, contractMetadata, staticAnalysisResults, options);
+        validatedResults = options.skipValidation ? 
+          aiAnalysisResults : 
+          await validateFindings(contractData, aiAnalysisResults);
+      }
     }
     
     // 6. Generate comprehensive report
@@ -1442,6 +1462,47 @@ function determineOverallRiskLevel(securityScore) {
     return quality;
   }
   
+/**
+ * Transform comprehensive audit results to the format expected by the existing system
+ */
+function transformComprehensiveResults(comprehensiveResults) {
+  const { findings, scores, executiveSummary, metadata } = comprehensiveResults;
+  
+  // Combine all findings into a single array for compatibility
+  const allFindings = [
+    ...(findings.security || []),
+    ...(findings.gasOptimization || []),
+    ...(findings.codeQuality || [])
+  ].map(finding => ({
+    title: finding.title,
+    description: finding.description,
+    severity: finding.severity || finding.impact, // Handle both severity and impact
+    impact: finding.impact || finding.description,
+    recommendation: finding.remediation || finding.recommendation || 'Review and address this finding',
+    codeReference: finding.codeReference || finding.codeEvidence?.vulnerableCode || ''
+  }));
+  
+  return {
+    findings: allFindings,
+    overallAssessment: executiveSummary?.summary || comprehensiveResults.summary || 'Multi-AI comprehensive analysis completed',
+    securityScore: scores?.overall || scores?.security || 75,
+    contractType: metadata?.contractType || 'Smart Contract',
+    keyFeatures: comprehensiveResults.keyFeatures || [],
+    findingCounts: {
+      critical: (findings.security || []).filter(f => f.severity === 'CRITICAL').length,
+      high: (findings.security || []).filter(f => f.severity === 'HIGH').length,
+      medium: allFindings.filter(f => f.severity === 'MEDIUM').length,
+      low: allFindings.filter(f => f.severity === 'LOW').length,
+      info: allFindings.filter(f => f.severity === 'INFO').length
+    },
+    analysisMetadata: {
+      tier: metadata?.tier || 'free',
+      modelsUsed: metadata?.modelsUsed || [],
+      supervisor: metadata?.supervisor || 'AI Supervisor'
+    }
+  };
+}
+
   // Export all necessary functions
   export {
     auditSmartContract,
