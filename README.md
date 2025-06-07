@@ -30,6 +30,7 @@ npm install
 yarn install
 ```
 
+
 ### 2. Set Up API Keys
 Copy the example environment file and add your API keys:
 ```bash
