@@ -1,5 +1,5 @@
 // pages/api/analyze.js
-import { auditSmartContract } from './analyze-helpers';
+import { auditSmartContract } from '../../lib/analyzer';
 import { saveAuditReport, findMostRecentAuditReport } from '../../lib/localStorage';
 
 // Active requests tracking

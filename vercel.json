@@ -1,14 +1,9 @@
 {
   "version": 2,
-  "name": "defi-watchdog",
-  "routes": [
+  "builds": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
+      "src": "package.json",
+      "use": "@vercel/next"
     }
   ],
   "env": {
@@ -16,9 +11,11 @@
   },
   "functions": {
     "src/pages/api/**/*.js": {
-      "maxDuration": 30
+      "maxDuration": 300
     }
   },
   "regions": ["iad1"],
-  "framework": "nextjs"
+  "installCommand": "yarn install --frozen-lockfile",
+  "buildCommand": "yarn build",
+  "outputDirectory": ".next"
 }
