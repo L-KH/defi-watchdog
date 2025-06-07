@@ -4,7 +4,8 @@ import config from './config';
 import { getContractSource, getContractInfo, getEtherscanUrl } from './etherscan';
 import connectToDatabase from './database';
 import AuditReport from '../models/AuditReport';
-import { multiAIAudit, adaptMultiAIResults } from './multi-ai-audit';
+// Removing unused import for now
+// import { multiAIAudit, adaptMultiAIResults } from './multi-ai-audit';
 import { analyzeWithDeepseek, validateFindingsWithDeepseek } from './deepseek';
 import { runComprehensiveAudit } from './comprehensive-audit';
 

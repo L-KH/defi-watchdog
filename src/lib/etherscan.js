@@ -112,14 +112,46 @@ function processSourceCode(sourceCode) {
       
       // Get the main contract file or concatenate all files
       if (parsed.sources) {
-        const sources = Object.entries(parsed.sources)
-          .map(([filename, source]) => {
-            const content = source.content || '';
-            return content.length > 0 ? `// File: ${filename}\n\n${content}` : '';
-          })
-          .filter(content => content.length > 0);
+        const sources = Object.entries(parsed.sources);
         
-        return sources.join('\n\n// ========================================\n\n');
+        // Priority order: try to find main contract files first
+        const prioritizedSources = [];
+        const importSources = [];
+        
+        for (const [filename, source] of sources) {
+          const content = source.content || '';
+          if (content.length === 0) continue;
+          
+          // Check if this looks like a main contract (has contract definition, not just imports/interfaces)
+          const hasContractDefinition = /contract\s+\w+\s*(?:is\s+[\w,\s]+)?\s*\{[\s\S]*\}/m.test(content);
+          const hasConstructor = /constructor\s*\([^\)]*\)/.test(content);
+          const hasMainFunctions = /function\s+\w+\s*\([^\)]*\)/.test(content);
+          const isInterface = /interface\s+\w+/.test(content);
+          const isLibrary = /library\s+\w+/.test(content);
+          const isOpenZeppelinImport = filename.includes('@openzeppelin') || filename.includes('node_modules') || content.includes('// OpenZeppelin');
+          
+          if (hasContractDefinition && (hasConstructor || hasMainFunctions) && !isInterface && !isLibrary && !isOpenZeppelinImport) {
+            // This looks like a main contract
+            prioritizedSources.unshift(`// File: ${filename}\n\n${content}`);
+          } else if (!isOpenZeppelinImport) {
+            // This is likely a custom contract or interface
+            prioritizedSources.push(`// File: ${filename}\n\n${content}`);
+          } else {
+            // This is an import/library - add at the end
+            importSources.push(`// File: ${filename}\n\n${content}`);
+          }
+        }
+        
+        // Combine with main contracts first, then imports
+        const allSources = [...prioritizedSources, ...importSources].filter(content => content.length > 0);
+        
+        if (allSources.length === 0) {
+          console.warn('No valid source files found in multi-file contract');
+          return sourceCode; // Return original if parsing fails
+        }
+        
+        console.log(`Processed multi-file contract: ${prioritizedSources.length} main files, ${importSources.length} imports`);
+        return allSources.join('\n\n// ========================================\n\n');
       }
     } catch (err) {
       console.error('Error parsing multi-file contract:', err);

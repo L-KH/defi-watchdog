@@ -1,342 +1,164 @@
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import React, { useState } from 'react';
 import { useRouter } from 'next/router';
-import { useWallet } from '../../hooks/useWallet';
 
-export default function Header() {
-  const { account, connect, disconnect } = useWallet();
-  const [scrolled, setScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [connectionError, setConnectionError] = useState(null);
+// Enhanced Header with fixed hydration and improved UI
+const Header = () => {
   const router = useRouter();
-  const [chainId, setChainId] = useState(null);
-  const [isCorrectNetwork, setIsCorrectNetwork] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const SONIC_CHAIN_ID = 146;
-  const LINEA_CHAIN_ID = 59144;
-  
-  // Simple scroll detection
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-    
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const checkNetwork = async () => {
-      if (typeof window !== 'undefined' && window.ethereum) {
-        try {
-          const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-          const currentChainId = parseInt(chainId, 16);
-          setChainId(currentChainId);
-          setIsCorrectNetwork(currentChainId === SONIC_CHAIN_ID || currentChainId === LINEA_CHAIN_ID);
-        } catch (error) {
-          console.error('Error checking network:', error);
-        }
-      }
-    };
-    
-    checkNetwork();
-    
-    if (window.ethereum) {
-      window.ethereum.on('chainChanged', () => {
-        checkNetwork();
-      });
-    }
-    
-    return () => {
-      if (window.ethereum) {
-        window.ethereum.removeListener('chainChanged', checkNetwork);
-      }
-    };
-  }, []);
-
-  const getNetworkName = (chainId) => {
-    if (chainId === SONIC_CHAIN_ID) return 'Sonic';
-    if (chainId === LINEA_CHAIN_ID) return 'Linea';
-    return 'Unknown';
-  };
-
-  // Close mobile menu when route changes
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [router.pathname]);
-
-  const handleNetworkSwitch = async () => {
-    if (!account || !window.ethereum) return;
-    
-    const userPrefersLinea = localStorage.getItem('preferredNetwork') !== 'sonic';
-    const targetChainId = userPrefersLinea ? LINEA_CHAIN_ID : SONIC_CHAIN_ID;
-    
-    try {
-      await window.ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: `0x${targetChainId.toString(16)}` }],
-      });
-    } catch (switchError) {
-      if (switchError.code === 4902 || switchError.message.includes('wallet_addEthereumChain')) {
-        try {
-          if (targetChainId === SONIC_CHAIN_ID) {
-            await window.ethereum.request({
-              method: 'wallet_addEthereumChain',
-              params: [{
-                chainId: `0x${SONIC_CHAIN_ID.toString(16)}`,
-                chainName: 'Sonic',
-                nativeCurrency: {
-                  name: 'SONIC',
-                  symbol: 'SONIC',
-                  decimals: 18
-                },
-                rpcUrls: ['https://mainnet.sonic.io/rpc'],
-                blockExplorerUrls: ['https://sonicscan.org/']
-              }],
-            });
-          } else {
-            await window.ethereum.request({
-              method: 'wallet_addEthereumChain',
-              params: [{
-                chainId: `0x${LINEA_CHAIN_ID.toString(16)}`,
-                chainName: 'Linea Mainnet',
-                nativeCurrency: {
-                  name: 'ETH',
-                  symbol: 'ETH',
-                  decimals: 18
-                },
-                rpcUrls: ['https://rpc.linea.build'],
-                blockExplorerUrls: ['https://lineascan.build/']
-              }],
-            });
-          }
-        } catch (addError) {
-          setConnectionError(`Could not add ${targetChainId === SONIC_CHAIN_ID ? 'Sonic' : 'Linea'} network to your wallet. Please add it manually.`);
-        }
-      } else {
-        setConnectionError(`Failed to switch to ${targetChainId === SONIC_CHAIN_ID ? 'Sonic' : 'Linea'} network. Please try again.`);
-      }
-    }
-  };
-
-  // Menu items
   const menuItems = [
-    { path: '/', label: 'Home' },
-    { path: '/dashboard', label: 'Dashboard' },
-    { path: '/audit', label: 'Audit' },
-    { path: '/how-it-works', label: 'How It Works' }
+    { path: '/', label: 'Home', icon: '🏠' },
+    { path: '/dashboard', label: 'Dashboard', icon: '📊' },
+    { path: '/audit', label: 'Audit', icon: '🔍' },
+    { path: '/audit-pro', label: 'Audit Pro', icon: '🚀' },
+    { path: '/how-it-works', label: 'How It Works', icon: '❓' }
   ];
 
-  // Handle wallet connection
-  const handleWalletConnect = async () => {
-    if (account) {
-      disconnect();
-      return;
-    }
-    
-    setIsConnecting(true);
-    setConnectionError(null);
-    
-    try {
-      if (typeof window !== 'undefined' && window.ethereum) {
-        try {
-          const accounts = await window.ethereum.request({ 
-            method: 'eth_requestAccounts' 
-          });
-          
-          console.log("Connected to wallet:", accounts[0]);
-          
-          if (typeof connect === 'function') {
-            await connect();
-          }
-        } catch (requestError) {
-          console.error("Error requesting accounts:", requestError);
-          throw new Error("Wallet connection failed. Please check your wallet extension.");
-        }
-      } else {
-        throw new Error("No wallet detected. Please install MetaMask or another Web3 wallet.");
-      }
-    } catch (error) {
-      console.error("Connection error:", error);
-      setConnectionError(error.message);
-    } finally {
-      setIsConnecting(false);
-    }
-  };
-
-  // Format account address for display
-  const formatAccount = (address) => {
-    if (!address) return '';
-    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-  };
+  // Use router.pathname for active state (no hydration issues)
+  const currentPath = router.pathname;
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      scrolled 
-        ? 'bg-white shadow-lg py-4' 
-        : 'bg-white/90 backdrop-blur-sm py-4'
-    }`}>
-      <div className="container mx-auto px-4 flex items-center justify-between">
-        {/* Logo */}
-        <Link href="/" className="flex items-center group">
-          <div className="relative">
-            <div className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-lg shadow-md group-hover:shadow-lg transition-all duration-300">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-            </div>
-            <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center shadow-sm border border-gray-100">
-              <span className="text-xs">🤖</span>
-            </div>
-          </div>
-          <span className="ml-2 font-semibold text-lg text-gray-800">
-            DeFi<span className="text-blue-600">Watchdog</span>
-          </span>
-        </Link>
-
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-1">
-          {menuItems.map((item) => (
-            <Link 
-              key={item.path} 
-              href={item.path}
-              className={`
-                relative px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200
-                ${router.pathname === item.path 
-                  ? 'text-blue-600 bg-blue-50' 
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}
-              `}
-            >
-              {item.label}
-              {router.pathname === item.path && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded"></span>
-              )}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Wallet Button and Mobile Menu Toggle */}
-        <div className="flex items-center space-x-3">
-          {/* Network Status */}
-          {account && (
-            <div className="hidden md:flex items-center">
-              <div className={`px-3 py-1 rounded-l-lg text-xs font-medium ${
-                isCorrectNetwork 
-                  ? 'bg-green-100 text-green-800 border border-green-200' 
-                  : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
-              }`}>
-                {isCorrectNetwork ? getNetworkName(chainId) : 'Wrong Network'}
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md shadow-lg border-b border-gray-100">
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between h-16">
+          {/* Logo - Enhanced with gradient and animation */}
+          <a 
+            href="/"
+            className="flex items-center space-x-3 group"
+          >
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl blur-lg opacity-75 group-hover:opacity-100 transition-opacity"></div>
+              <div className="relative w-10 h-10 flex items-center justify-center bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-xl shadow-lg transform group-hover:scale-110 transition-transform">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
               </div>
-              {!isCorrectNetwork && (
-                <button
-                  onClick={handleNetworkSwitch}
-                  className="px-3 py-1 rounded-r-lg text-xs font-medium bg-blue-500 text-white border border-blue-600 hover:bg-blue-600 transition-colors"
+            </div>
+            <div>
+              <span className="font-bold text-xl text-gray-900 group-hover:text-blue-600 transition-colors">
+                DeFi<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Watchdog</span>
+              </span>
+              <p className="text-xs text-gray-500 -mt-1">Smart Contract Security</p>
+            </div>
+          </a>
+
+          {/* Desktop Navigation - Enhanced with better styling */}
+          <nav className="hidden md:flex items-center space-x-1">
+            {menuItems.map((item) => {
+              const isActive = currentPath === item.path;
+              
+              return (
+                <a
+                  key={item.path}
+                  href={item.path}
+                  className={`
+                    relative px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200
+                    ${isActive 
+                      ? 'text-white' 
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }
+                  `}
                 >
-                  Switch
-                </button>
-              )}
+                  {/* Active background */}
+                  {isActive && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg"></div>
+                  )}
+                  
+                  {/* Content */}
+                  <span className="relative flex items-center space-x-2">
+                    <span className="text-lg">{item.icon}</span>
+                    <span>{item.label}</span>
+                  </span>
+                  
+                  {/* Hover effect */}
+                  {!isActive && (
+                    <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 opacity-0 hover:opacity-10 transition-opacity"></div>
+                  )}
+                </a>
+              );
+            })}
+          </nav>
+
+          {/* Right side items */}
+          <div className="flex items-center space-x-4">
+            {/* Wallet Connect Button - Desktop */}
+            <div className="hidden md:block">
+              <button className="relative group px-5 py-2.5 font-medium text-white transition-all duration-200">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg group-hover:shadow-xl transition-shadow"></div>
+                <span className="relative flex items-center space-x-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                  <span>Connect Wallet</span>
+                </span>
+              </button>
             </div>
-          )}
 
-          {/* Wallet Connect Button */}
-          <button
-            onClick={handleWalletConnect}
-            disabled={isConnecting}
-            className={`
-              rounded-lg py-2 px-4 text-sm font-medium transition-all duration-200 flex items-center
-              ${account 
-                ? 'bg-green-50 text-green-700 border border-green-200 hover:bg-green-100' 
-                : 'bg-blue-600 text-white shadow-md hover:bg-blue-700 hover:shadow-lg'}
-              ${isConnecting ? 'opacity-75 cursor-not-allowed' : 'cursor-pointer'}
-            `}
-          >
-            {account ? (
-              <>
-                <span className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
-                {formatAccount(account)}
-              </>
-            ) : isConnecting ? (
-              <>
-                <svg className="animate-spin h-4 w-4 mr-2 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Connecting...
-              </>
-            ) : (
-              <>
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-                Connect Wallet
-              </>
-            )}
-          </button>
-
-          {/* Mobile Menu Toggle */}
-          <button
-            className="inline-flex items-center justify-center p-2 rounded-md md:hidden text-gray-700 hover:bg-gray-100"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-expanded={mobileMenuOpen}
-          >
-            <span className="sr-only">Open main menu</span>
-            <div className="relative w-6 h-5">
-              <span className={`absolute block h-0.5 w-6 bg-current transform transition duration-200 ease-in-out ${mobileMenuOpen ? 'rotate-45 translate-y-2' : '-translate-y-2'}`}></span>
-              <span className={`absolute block h-0.5 w-6 bg-current transform transition duration-200 ease-in-out ${mobileMenuOpen ? 'opacity-0' : 'opacity-100'}`}></span>
-              <span className={`absolute block h-0.5 w-6 bg-current transform transition duration-200 ease-in-out ${mobileMenuOpen ? '-rotate-45 translate-y-2' : 'translate-y-2'}`}></span>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
-        <div className="bg-white border-t border-gray-200 px-4 py-4">
-          <nav className="flex flex-col space-y-3">
-            {menuItems.map((item) => (
-              <Link 
-                key={item.path} 
-                href={item.path}
-                className={`
-                  px-4 py-2 rounded-md font-medium text-sm transition-colors
-                  ${router.pathname === item.path ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-50'}
-                `}
-              >
-                {item.label}
-              </Link>
-            ))}
-            
-            {/* Mobile Network Status */}
-            {account && (
-              <div className="flex items-center mt-4 pt-4 border-t border-gray-200">
-                <div className={`px-3 py-1 rounded-l-lg text-xs font-medium ${
-                  isCorrectNetwork 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-yellow-100 text-yellow-800'
-                }`}>
-                  {isCorrectNetwork ? getNetworkName(chainId) : 'Wrong Network'}
-                </div>
-                {!isCorrectNetwork && (
-                  <button
-                    onClick={handleNetworkSwitch}
-                    className="px-3 py-1 rounded-r-lg text-xs font-medium bg-blue-500 text-white hover:bg-blue-600"
-                  >
-                    Switch
-                  </button>
+            {/* Mobile Menu Button - Enhanced */}
+            <button
+              className="md:hidden relative p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 )}
-              </div>
-            )}
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Menu - Enhanced with animations */}
+        <div className={`md:hidden transition-all duration-300 ease-in-out ${
+          mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
+        }`}>
+          <nav className="py-4 space-y-1">
+            {menuItems.map((item) => {
+              const isActive = currentPath === item.path;
+              
+              return (
+                <a
+                  key={item.path}
+                  href={item.path}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`
+                    flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm transition-all
+                    ${isActive 
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg' 
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }
+                  `}
+                >
+                  <span className="text-lg">{item.icon}</span>
+                  <span>{item.label}</span>
+                  {isActive && (
+                    <svg className="w-4 h-4 ml-auto" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </a>
+              );
+            })}
             
-            {/* Error Message */}
-            {connectionError && !account && (
-              <div className="px-4 py-2 text-xs text-red-600 bg-red-50 rounded-md border border-red-200">
-                {connectionError}
-              </div>
-            )}
+            {/* Mobile Wallet Button */}
+            <div className="pt-4 px-4">
+              <button className="w-full relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg"></div>
+                <span className="relative flex items-center justify-center space-x-2 px-4 py-3 font-medium text-white">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                  </svg>
+                  <span>Connect Wallet</span>
+                </span>
+              </button>
+            </div>
           </nav>
         </div>
       </div>
     </header>
   );
-}
+};
+
+export default Header;

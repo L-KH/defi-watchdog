@@ -181,6 +181,17 @@
     100% { background-position: 300% 0%; }
   }
 
+  @keyframes slide-in-right {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
   /* Utility classes for animations */
   .animate-fadeIn { animation: fadeIn var(--animation-medium) forwards; }
   .animate-fadeInUp { animation: fadeInUp var(--animation-medium) forwards; }
@@ -190,6 +201,7 @@
   .animate-float { animation: float 3s ease-in-out infinite; }
   .animate-ripple { animation: ripple 2s linear infinite; }
   .animate-spin { animation: spin 1s linear infinite; }
+  .animate-slide-in-right { animation: slide-in-right 0.3s ease-out; }
   
   /* Button Styles */
   .btn {

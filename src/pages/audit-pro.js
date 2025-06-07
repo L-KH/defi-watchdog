@@ -1,4 +1,4 @@
-// src/pages/audit.js - FREE AUDIT PAGE (COMPLETE WITH STATIC TOOLS + FREE AI)
+// src/pages/audit-pro.js - PREMIUM AUDIT PAGE (RESTORED PROPER FLOW)
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
@@ -7,12 +7,97 @@ import { useToast } from '../components/common/Toast';
 import ContractScannerAPI from '../services/contractScannerApi';
 import { analyzeWithAI } from '../lib/aiAnalysis';
 
-// Component imports for FREE page
-import ToolsScanCard from '../components/audit/ToolsScanCard';
-import AIScanCardFree from '../components/audit/AIScanCardFree';
+// Component imports for Premium page
+import AIScanCardPremium from '../components/audit/AIScanCardPremium';
 import EnhancedScanResults from '../components/audit/EnhancedScanResults';
 
-export default function EnhancedAuditTool() {
+// Empty Static Analysis Card Component for Pro
+function ToolsScanCardPro({ scannerHealth, toolsInfo, isLoading, isScanning, onScan, error, result }) {
+  return (
+    <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+      {/* Header */}
+      <div className="bg-gradient-to-br from-gray-600 via-slate-600 to-gray-700 text-white p-8">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center mr-4">
+              <span className="text-2xl">🛠️</span>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">Premium Static Analysis Tools</h2>
+              <p className="text-gray-100 text-sm">Professional-grade security tools</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-sm text-gray-200">Coming</div>
+            <div className="text-xl font-bold">Soon</div>
+            <div className="text-sm text-gray-200">✨</div>
+          </div>
+        </div>
+        <p className="text-gray-100 leading-relaxed">
+          Advanced static analysis tools and premium integrations will be available here. 
+          Stay tuned for exclusive professional-grade security analysis features.
+        </p>
+      </div>
+
+      <div className="p-8">
+        {/* Coming Soon Message */}
+        <div className="text-center py-12">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-full mb-6">
+            <span className="text-4xl">🚧</span>
+          </div>
+          
+          <h3 className="text-2xl font-bold text-gray-900 mb-4">Premium Tools Coming Soon</h3>
+          <p className="text-gray-600 mb-6 max-w-md mx-auto">
+            We're working on integrating premium static analysis tools and exclusive security features for professional developers.
+          </p>
+          
+          {/* Features Preview */}
+          <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-6 mb-6">
+            <h4 className="font-semibold text-gray-900 mb-4">What's Coming:</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-700">
+              <div className="flex items-center">
+                <span className="mr-2">🔍</span>
+                <span>Advanced Slither Pro</span>
+              </div>
+              <div className="flex items-center">
+                <span className="mr-2">⚡</span>
+                <span>Mythril Enterprise</span>
+              </div>
+              <div className="flex items-center">
+                <span className="mr-2">🎯</span>
+                <span>Custom Security Rules</span>
+              </div>
+              <div className="flex items-center">
+                <span className="mr-2">📊</span>
+                <span>Advanced Reporting</span>
+              </div>
+              <div className="flex items-center">
+                <span className="mr-2">🔒</span>
+                <span>Compliance Checks</span>
+              </div>
+              <div className="flex items-center">
+                <span className="mr-2">⚙️</span>
+                <span>CI/CD Integration</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-6">
+            <a
+              href="/audit"
+              className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <span className="mr-2">🔧</span>
+              Try Free Static Tools
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function EnhancedAuditToolPro() {
   const router = useRouter();
   const { showError, showSuccess, showWarning } = useToast();
   
@@ -160,20 +245,6 @@ export default function EnhancedAuditTool() {
     setAddress(submittedAddress);
     setNetwork(submittedNetwork);
     
-    // Update URL only if it's different to prevent router loop
-    const currentQuery = router.query;
-    if (currentQuery.address !== submittedAddress || currentQuery.network !== submittedNetwork) {
-      try {
-        await router.replace({
-          pathname: router.pathname,
-          query: { address: submittedAddress, network: submittedNetwork }
-        }, undefined, { shallow: true });
-      } catch (error) {
-        console.warn('Router update failed:', error);
-        // Continue with the rest of the function even if router update fails
-      }
-    }
-    
     // Reset previous results
     setToolsScanResult(null);
     setAIScanResult(null);
@@ -221,7 +292,6 @@ export default function EnhancedAuditTool() {
   const handleToolsScan = async (scanOptions) => {
     if (!contractSource || !contractInfo) {
       setToolsError('Contract source code not available');
-      showError('Contract source code not available. Please load a contract first.');
       return;
     }
     
@@ -230,8 +300,6 @@ export default function EnhancedAuditTool() {
       setToolsError(null);
       
       const filename = `${contractInfo.contractName || 'Contract'}.sol`;
-      
-      console.log('🔧 Starting static analysis with options:', scanOptions);
       
       const result = await ContractScannerAPI.scanContractCode(
         contractSource,
@@ -246,11 +314,9 @@ export default function EnhancedAuditTool() {
       result.contractInfo = contractInfo;
       
       setToolsScanResult(result);
-      showSuccess('Static analysis completed successfully!');
     } catch (error) {
       console.error('Tools scan failed:', error);
       setToolsError(error.message);
-      showError(`Static Analysis Failed: ${error.message}`);
     } finally {
       setIsToolsScanning(false);
     }
@@ -267,17 +333,17 @@ export default function EnhancedAuditTool() {
       setIsAIScanning(true);
       setAIError(null);
       
-      console.log('🤖 Starting FREE AI analysis with options:', scanOptions);
+      console.log('🚀 Starting PREMIUM AI analysis with options:', scanOptions);
       
       const result = await analyzeWithAI(
         contractSource,
         contractInfo.contractName || 'Unknown Contract',
         { 
           ...scanOptions,
-          type: 'free', // Force free analysis
-          timeout: 120000, // 2 minutes for free
+          type: 'premium', // Force premium analysis
+          timeout: scanOptions.timeout || (scanOptions.type === 'premium' ? 300000 : 120000),
           temperature: 0.1,
-          max_tokens: 4000
+          max_tokens: scanOptions.type === 'premium' ? 6000 : 4000
         }
       );
       
@@ -286,14 +352,14 @@ export default function EnhancedAuditTool() {
       setAIScanResult(result);
       
       if (result.success !== false) {
-        showSuccess('AI analysis completed successfully!');
+        showSuccess('Premium AI analysis completed successfully!');
       } else {
-        showError(`AI Analysis Failed: ${result.error}`);
+        showError(`Premium AI Analysis Failed: ${result.error}`);
       }
     } catch (error) {
       console.error('AI scan failed:', error);
       setAIError(error.message);
-      showError(`AI Analysis Failed: ${error.message}`);
+      showError(`Premium AI Analysis Failed: ${error.message}`);
     } finally {
       setIsAIScanning(false);
     }
@@ -304,8 +370,8 @@ export default function EnhancedAuditTool() {
   return (
     <Layout>
       <Head>
-        <title>Smart Contract Security Audit - DeFi Watchdog</title>
-        <meta name="description" content="Comprehensive smart contract security analysis using multiple static analysis tools and AI" />
+        <title>Premium Smart Contract Security Audit - DeFi Watchdog</title>
+        <meta name="description" content="Professional-grade smart contract security analysis with premium AI models and advanced tools" />
         <link rel="icon" href="/favicon.ico" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -314,29 +380,29 @@ export default function EnhancedAuditTool() {
       <div className="container mx-auto px-4 py-8 mt-10">
         {/* Enhanced Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center py-2 px-4 rounded-full bg-blue-100 text-blue-700 text-sm font-medium mb-4">
-            <span className="animate-pulse mr-2">🔴</span>
-            9-Tool Security Analysis Platform
+          <div className="inline-flex items-center py-2 px-4 rounded-full bg-gradient-to-r from-purple-100 to-blue-100 text-purple-700 text-sm font-medium mb-4">
+            <span className="animate-pulse mr-2">🚀</span>
+            Premium Professional Security Platform
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Smart Contract Security Audit
+            Premium Smart Contract Audit
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Professional-grade security analysis combining 5 static analysis tools with specialized AI models
+            Professional-grade security analysis with premium AI models (Multiple Advanced Models + Supervisor) and comprehensive reporting
           </p>
         </div>
 
-        {/* Contract Input Card */}
-        <div className="bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-xl border border-gray-200 p-8 mb-12">
+        {/* ENHANCED Contract Input Card */}
+        <div className="bg-gradient-to-br from-white to-purple-50 rounded-2xl shadow-xl border border-purple-200 p-8 mb-12">
           <div className="max-w-4xl mx-auto">
             {/* Header */}
             <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl mb-4">
-                <span className="text-2xl text-white">🔍</span>
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl mb-4">
+                <span className="text-2xl text-white">🚀</span>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Contract Analysis</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Premium Contract Analysis</h2>
               <p className="text-gray-600">
-                Enter any verified smart contract address to begin comprehensive security analysis
+                Enter any verified smart contract address for professional-grade security analysis
               </p>
             </div>
             
@@ -348,13 +414,13 @@ export default function EnhancedAuditTool() {
             }} className="space-y-6">
               {/* Network Selection */}
               <div className="flex justify-center mb-6">
-                <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1">
+                <div className="inline-flex rounded-lg border border-purple-200 bg-purple-50 p-1">
                   <button
                     type="button"
                     onClick={() => setNetwork('linea')}
                     className={`px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                       network === 'linea'
-                        ? 'bg-white text-blue-700 shadow-sm border border-blue-200'
+                        ? 'bg-white text-purple-700 shadow-sm border border-purple-200'
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                     disabled={isLoading}
@@ -367,7 +433,7 @@ export default function EnhancedAuditTool() {
                     onClick={() => setNetwork('sonic')}
                     className={`px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
                       network === 'sonic'
-                        ? 'bg-white text-blue-700 shadow-sm border border-blue-200'
+                        ? 'bg-white text-purple-700 shadow-sm border border-purple-200'
                         : 'text-gray-600 hover:text-gray-900'
                     }`}
                     disabled={isLoading}
@@ -390,11 +456,11 @@ export default function EnhancedAuditTool() {
                     placeholder="0x742d35Cc6634C0532925a3b8D42C5D7c5041234d or https://lineascan.build/address/0x..."
                     value={address}
                     onChange={(e) => handleAddressChange(e.target.value)}
-                    className="w-full px-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm"
+                    className="w-full px-4 py-4 text-lg border-2 border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
                     disabled={isLoading}
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-5 w-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.102m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
                     </svg>
                   </div>
@@ -405,7 +471,7 @@ export default function EnhancedAuditTool() {
               <button
                 type="submit"
                 disabled={!address.trim() || isLoading}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:transform-none shadow-lg hover:shadow-xl"
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:transform-none shadow-lg hover:shadow-xl"
               >
                 {isLoadingContract ? (
                   <div className="flex items-center justify-center">
@@ -415,17 +481,17 @@ export default function EnhancedAuditTool() {
                 ) : (
                   <div className="flex items-center justify-center">
                     <span className="mr-2">🚀</span>
-                    Load Contract for Analysis
+                    Load Contract for Premium Analysis
                   </div>
                 )}
               </button>
             </form>
 
-            {/* Quick Examples */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
+            {/* Enhanced Quick Examples */}
+            <div className="mt-8 pt-6 border-t border-purple-200">
               <h4 className="text-sm font-semibold text-gray-700 mb-4 flex items-center">
                 <span className="mr-2">⚡</span>
-                Quick Examples
+                Premium Analysis Examples
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <button
@@ -434,12 +500,12 @@ export default function EnhancedAuditTool() {
                     setAddress('0x2d8879046f1559e53eb052e949e9544bcb72f414');
                     setNetwork('linea');
                   }}
-                  className="text-left p-4 rounded-lg border-2 border-dashed border-blue-200 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 group"
+                  className="text-left p-4 rounded-lg border-2 border-dashed border-purple-200 hover:border-purple-400 hover:bg-purple-50 transition-all duration-200 group"
                   disabled={isLoading}
                 >
                   <div className="flex items-center mb-2">
                     <span className="mr-2">🟢</span>
-                    <span className="font-medium text-blue-800">Linea DEX Router</span>
+                    <span className="font-medium text-purple-800">Linea DEX Router</span>
                   </div>
                   <p className="text-xs text-gray-600 font-mono">0x2d8879046f1559e53eb052e949e9544bcb72f414</p>
                 </button>
@@ -463,16 +529,16 @@ export default function EnhancedAuditTool() {
           </div>
         </div>
 
-        {/* Contract Info Display */}
+        {/* Enhanced Contract Info Display */}
         {(contractInfo || isLoadingContract || loadingError) && (
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8">
+          <div className="bg-white rounded-xl shadow-lg border border-purple-200 p-6 mb-8">
             <h3 className="text-xl font-semibold mb-4 flex items-center">
               <span className="mr-2">📋</span>
               Contract Information
             </h3>
             {isLoadingContract ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mr-3"></div>
                 <span className="text-lg">Fetching contract details from blockchain explorer...</span>
               </div>
             ) : loadingError ? (
@@ -495,10 +561,10 @@ export default function EnhancedAuditTool() {
                 </div>
               </div>
             ) : contractInfo && contractSource ? (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
                 <div className="flex items-center mb-4">
-                  <span className="text-blue-600 text-xl mr-3">✅</span>
-                  <span className="font-semibold text-blue-800 text-lg">Contract Successfully Loaded</span>
+                  <span className="text-purple-600 text-xl mr-3">✅</span>
+                  <span className="font-semibold text-purple-800 text-lg">Contract Successfully Loaded</span>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="bg-white p-4 rounded-lg">
@@ -515,7 +581,7 @@ export default function EnhancedAuditTool() {
                   </div>
                   <div className="bg-white p-4 rounded-lg">
                     <p className="text-sm text-gray-500 mb-1">Source Lines</p>
-                    <p className="font-semibold text-gray-900">{contractSource.split('\\n').length} lines</p>
+                    <p className="font-semibold text-gray-900">{contractSource.split('\n').length} lines</p>
                   </div>
                 </div>
               </div>
@@ -526,23 +592,17 @@ export default function EnhancedAuditTool() {
         {/* Analysis Options - Only show when contract is loaded */}
         {contractSource && !loadingError && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-            {/* Static Analysis Tools */}
-            <ToolsScanCard
-              scannerHealth={scannerHealth}
-              toolsInfo={toolsInfo}
-              isLoading={isLoadingHealth}
-              isScanning={isToolsScanning}
-              onScan={handleToolsScan}
-              error={toolsError}
-              result={toolsScanResult}
-            />
+            {/* Premium Tools Analysis - Empty for now */}
+            <ToolsScanCardPro />
 
-            {/* Free AI Analysis */}
-            <AIScanCardFree
+            {/* Premium AI Analysis */}
+            <AIScanCardPremium
               isScanning={isAIScanning}
               onScan={handleAIScan}
               error={aiError}
               result={aiScanResult}
+              contractSource={contractSource}
+              contractInfo={contractInfo}
             />
           </div>
         )}
@@ -556,76 +616,90 @@ export default function EnhancedAuditTool() {
           />
         )}
 
-        {/* Upgrade CTA */}
-        {contractSource && !loadingError && (
-          <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl border border-purple-200 p-8 mb-12">
-            <div className="max-w-4xl mx-auto text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl mb-4">
-                <span className="text-2xl text-white">🚀</span>
-              </div>
-              <h3 className="text-2xl font-bold text-purple-900 mb-4">Want More Advanced Analysis?</h3>
-              <p className="text-purple-700 mb-6 max-w-2xl mx-auto">
-                Upgrade to Premium for 6+ AI models, supervisor verification, comprehensive reporting, and advanced security features.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <a
-                  href="/audit-pro"
-                  className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 font-semibold"
-                >
-                  <span className="mr-2">🚀</span>
-                  Try Premium Audit
-                </a>
-                <div className="text-sm text-purple-600">
-                  ✨ 6+ AI Models • Supervisor Verification • Professional Reports
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Security Analysis Summary */}
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200 p-8">
+        {/* ENHANCED: Premium Security Analysis Summary */}
+        <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl border border-purple-200 p-8 mt-12">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-8">
-              <h3 className="text-2xl font-bold text-blue-900 mb-2">About Our Security Analysis</h3>
-              <p className="text-blue-700">Professional-grade security auditing made accessible</p>
+              <h3 className="text-2xl font-bold text-purple-900 mb-2">About Our Premium Security Analysis</h3>
+              <p className="text-purple-700">Professional-grade security auditing for production-ready contracts</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Premium AI Models */}
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-purple-100">
                 <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center mr-3">
-                    <span className="text-white text-lg">🛠️</span>
+                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center mr-3">
+                    <span className="text-white text-lg">🧠</span>
                   </div>
-                  <h4 className="font-semibold text-gray-900">9-Tool Analysis</h4>
+                  <h4 className="font-semibold text-gray-900">Premium Multi-AI Analysis</h4>
                 </div>
                 <p className="text-sm text-gray-600 mb-3">
-                  Comprehensive security analysis using 5 static analysis tools + 4 specialized AI models.
+                  Advanced AI analysis using 6+ premium AI models with supervisor verification for comprehensive security assessment.
                 </p>
+                <div className="flex flex-wrap gap-1">
+                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">DeepSeek</span>
+                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">WizardLM</span>
+                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">Llama 3.1</span>
+                  <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full">Supervisor</span>
+                </div>
               </div>
 
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
+              {/* Professional Reports */}
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-purple-100">
+                <div className="flex items-center mb-4">
+                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center mr-3">
+                    <span className="text-white text-lg">📊</span>
+                  </div>
+                  <h4 className="font-semibold text-gray-900">Professional Reports</h4>
+                </div>
+                <p className="text-sm text-gray-600 mb-3">
+                  Comprehensive audit reports with CVSS scoring, remediation guides, and multiple export formats for production use.
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">PDF Export</span>
+                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">HTML Report</span>
+                  <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">CVSS Scores</span>
+                </div>
+              </div>
+
+              {/* Gas Optimization */}
+              <div className="bg-white rounded-xl p-6 shadow-sm border border-purple-100">
                 <div className="flex items-center mb-4">
                   <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center mr-3">
                     <span className="text-white text-lg">⚡</span>
                   </div>
-                  <h4 className="font-semibold text-gray-900">Fast & Accurate</h4>
+                  <h4 className="font-semibold text-gray-900">Advanced Optimizations</h4>
                 </div>
                 <p className="text-sm text-gray-600 mb-3">
-                  Get professional audit results in 1-4 minutes with real-time progress tracking.
+                  Advanced gas optimization analysis with specific recommendations for reducing deployment and execution costs.
                 </p>
+                <div className="flex flex-wrap gap-1">
+                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Cost Analysis</span>
+                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Optimization Tips</span>
+                  <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">Savings Report</span>
+                </div>
               </div>
+            </div>
 
-              <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-100">
-                <div className="flex items-center mb-4">
-                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center mr-3">
-                    <span className="text-white text-lg">📊</span>
-                  </div>
-                  <h4 className="font-semibold text-gray-900">Detailed Reports</h4>
+            {/* Key Benefits */}
+            <div className="mt-8 pt-6 border-t border-purple-200">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-purple-600">6+</div>
+                  <div className="text-sm text-purple-700">Premium AI Models</div>
                 </div>
-                <p className="text-sm text-gray-600 mb-3">
-                  Professional audit reports with security scores and actionable recommendations.
-                </p>
+                <div>
+                  <div className="text-2xl font-bold text-purple-600">$0.10</div>
+                  <div className="text-sm text-purple-700">Per Analysis</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-purple-600">2-4min</div>
+                  <div className="text-sm text-purple-700">Analysis Time</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-purple-600">100+</div>
+                  <div className="text-sm text-purple-700">Security Checks</div>
+                </div>
               </div>
             </div>
           </div>

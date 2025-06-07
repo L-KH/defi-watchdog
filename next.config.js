@@ -1,12 +1,9 @@
 /**
- * Next.js configuration optimized for Vercel deployment
- * Updated for Next.js 15.2.0 compatibility
+ * Next.js configuration optimized for Next.js 15.2.0
+ * Stable configuration without profiling issues
  */
 const nextConfig = {
-  reactStrictMode: true,
-  
-  // Optimize for Vercel
-  swcMinify: true,
+  reactStrictMode: false, // Disabled to prevent double-execution issues
   
   images: {
     domains: ['images.unsplash.com', 'via.placeholder.com'],
@@ -27,13 +24,31 @@ const nextConfig = {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
   
-  // Optimize serverless functions for Vercel
-  serverRuntimeConfig: {
-    optimizeForVercel: true,
-  },
-  
   // Static generation timeout
   staticPageGenerationTimeout: 60,
+  
+  // Enhanced redirects for route normalization
+  async redirects() {
+    return [
+      // Normalize audit pro route
+      {
+        source: '/audit_pro',
+        destination: '/audit-pro',
+        permanent: true,
+      },
+      {
+        source: '/auditpro',
+        destination: '/audit-pro',
+        permanent: true,
+      },
+      // Normalize other routes
+      {
+        source: '/home',
+        destination: '/',
+        permanent: true,
+      },
+    ];
+  },
   
   // Cache headers for better performance
   async headers() {
@@ -71,8 +86,17 @@ const nextConfig = {
     ];
   },
   
-  // Webpack configuration for better build performance
+  // Simplified webpack configuration to prevent Fast Refresh issues
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+    // Prevent Fast Refresh reload loops
+    if (dev && !isServer) {
+      config.watchOptions = {
+        poll: 1000,
+        aggregateTimeout: 300,
+        ignored: /node_modules/,
+      };
+    }
+    
     // Optimize bundle size
     config.optimization.splitChunks = {
       chunks: 'all',
