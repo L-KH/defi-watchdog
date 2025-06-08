@@ -185,99 +185,145 @@ export default function AIReportCards({ aiReportCards = [], categoryAnalysis = {
         <div className="mt-8 pt-6 border-t border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Category Analysis Summary</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Security Summary */}
-            {categoryAnalysis.security && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-center mb-3">
-                  <span className="text-2xl mr-3">🛡️</span>
-                  <h4 className="font-semibold text-red-900">Security Analysis</h4>
+            {/* Security Summary - Always show with computed data */}
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center mb-3">
+                <span className="text-2xl mr-3">🛡️</span>
+                <h4 className="font-semibold text-red-900">Security Analysis</h4>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-red-700">Total Findings:</span>
+                  <span className="font-medium text-red-900">
+                    {categoryAnalysis?.security?.totalFindings || 
+                     aiReportCards.reduce((total, card) => total + (card.findings?.length || 0), 0)}
+                  </span>
                 </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-red-700">Total Findings:</span>
-                    <span className="font-medium text-red-900">{categoryAnalysis.security.totalFindings || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-red-700">Critical:</span>
-                    <span className="font-medium text-red-900">{categoryAnalysis.security.criticalCount || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-red-700">High Risk:</span>
-                    <span className="font-medium text-red-900">{categoryAnalysis.security.highCount || 0}</span>
-                  </div>
-                  <div className="mt-3 pt-3 border-t border-red-200">
-                    <span className="text-red-700 text-xs">Categories:</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {(categoryAnalysis.security.categories || []).map((cat, idx) => (
-                        <span key={idx} className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
-                          {cat}
-                        </span>
-                      ))}
-                    </div>
+                <div className="flex justify-between">
+                  <span className="text-red-700">Critical:</span>
+                  <span className="font-medium text-red-900">
+                    {categoryAnalysis?.security?.criticalCount || 
+                     aiReportCards.reduce((total, card) => 
+                       total + (card.findings?.filter(f => f.severity === 'CRITICAL').length || 0), 0)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-red-700">High Risk:</span>
+                  <span className="font-medium text-red-900">
+                    {categoryAnalysis?.security?.highCount || 
+                     aiReportCards.reduce((total, card) => 
+                       total + (card.findings?.filter(f => f.severity === 'HIGH').length || 0), 0)}
+                  </span>
+                </div>
+                <div className="mt-3 pt-3 border-t border-red-200">
+                  <span className="text-red-700 text-xs">AI Models:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {aiReportCards.slice(0, 3).map((card, idx) => (
+                      <span key={idx} className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
+                        {card.name.split(' ')[0]}
+                      </span>
+                    ))}
+                    {aiReportCards.length > 3 && (
+                      <span className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs">
+                        +{aiReportCards.length - 3} more
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* Gas Optimization Summary */}
-            {categoryAnalysis.gasOptimization && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <div className="flex items-center mb-3">
-                  <span className="text-2xl mr-3">⚡</span>
-                  <h4 className="font-semibold text-yellow-900">Gas Optimization</h4>
+            {/* Gas Optimization Summary - Always show with computed data */}
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-center mb-3">
+                <span className="text-2xl mr-3">⚡</span>
+                <h4 className="font-semibold text-yellow-900">Gas Optimization</h4>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-yellow-700">Optimizations:</span>
+                  <span className="font-medium text-yellow-900">
+                    {categoryAnalysis?.gasOptimization?.totalOptimizations || 
+                     aiReportCards.reduce((total, card) => 
+                       total + (card.findings?.filter(f => 
+                         f.category?.toLowerCase().includes('gas') || 
+                         f.title?.toLowerCase().includes('gas') ||
+                         f.title?.toLowerCase().includes('optimization')
+                       ).length || 0), 0)}
+                  </span>
                 </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-yellow-700">Optimizations:</span>
-                    <span className="font-medium text-yellow-900">{categoryAnalysis.gasOptimization.totalOptimizations || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-yellow-700">Est. Savings:</span>
-                    <span className="font-medium text-yellow-900">{categoryAnalysis.gasOptimization.estimatedSavings || 'N/A'}</span>
-                  </div>
-                  <div className="mt-3 pt-3 border-t border-yellow-200">
-                    <span className="text-yellow-700 text-xs">Categories:</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {(categoryAnalysis.gasOptimization.categories || []).map((cat, idx) => (
-                        <span key={idx} className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
-                          {cat}
-                        </span>
-                      ))}
-                    </div>
+                <div className="flex justify-between">
+                  <span className="text-yellow-700">AI Coverage:</span>
+                  <span className="font-medium text-yellow-900">
+                    {aiReportCards.filter(card => 
+                      card.specialty?.toLowerCase().includes('gas') ||
+                      card.specialty?.toLowerCase().includes('optimization') ||
+                      card.name?.toLowerCase().includes('gas')
+                    ).length} models
+                  </span>
+                </div>
+                <div className="mt-3 pt-3 border-t border-yellow-200">
+                  <span className="text-yellow-700 text-xs">Focus Areas:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
+                      Gas Usage
+                    </span>
+                    <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
+                      Efficiency
+                    </span>
+                    <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
+                      Optimization
+                    </span>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* Code Quality Summary */}
-            {categoryAnalysis.codeQuality && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-center mb-3">
-                  <span className="text-2xl mr-3">✨</span>
-                  <h4 className="font-semibold text-blue-900">Code Quality</h4>
+            {/* Code Quality Summary - Always show with computed data */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center mb-3">
+                <span className="text-2xl mr-3">✨</span>
+                <h4 className="font-semibold text-blue-900">Code Quality</h4>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-blue-700">Issues:</span>
+                  <span className="font-medium text-blue-900">
+                    {categoryAnalysis?.codeQuality?.totalIssues || 
+                     aiReportCards.reduce((total, card) => 
+                       total + (card.findings?.filter(f => 
+                         f.category?.toLowerCase().includes('quality') || 
+                         f.category?.toLowerCase().includes('code') ||
+                         f.severity === 'LOW' || f.severity === 'INFO'
+                       ).length || 0), 0)}
+                  </span>
                 </div>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-blue-700">Issues:</span>
-                    <span className="font-medium text-blue-900">{categoryAnalysis.codeQuality.totalIssues || 0}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-blue-700">Quality:</span>
-                    <span className="font-medium text-blue-900">{categoryAnalysis.codeQuality.overallQuality || 'Good'}</span>
-                  </div>
-                  <div className="mt-3 pt-3 border-t border-blue-200">
-                    <span className="text-blue-700 text-xs">Areas:</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {(categoryAnalysis.codeQuality.categories || ['Documentation', 'Standards']).map((cat, idx) => (
-                        <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
-                          {cat}
-                        </span>
-                      ))}
-                    </div>
+                <div className="flex justify-between">
+                  <span className="text-blue-700">Quality Score:</span>
+                  <span className="font-medium text-blue-900">
+                    {categoryAnalysis?.codeQuality?.overallQuality || 
+                     (aiReportCards.length > 0 ? 
+                       Math.round(aiReportCards.reduce((sum, card) => sum + (card.confidence || 85), 0) / aiReportCards.length) + '%' :
+                       'Good'
+                     )}
+                  </span>
+                </div>
+                <div className="mt-3 pt-3 border-t border-blue-200">
+                  <span className="text-blue-700 text-xs">Analyzed by:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                      {aiReportCards.length} AI Models
+                    </span>
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                      Best Practices
+                    </span>
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                      Standards
+                    </span>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
 

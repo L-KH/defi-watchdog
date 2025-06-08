@@ -21,6 +21,7 @@ export default function AIScanCardPremium({
   const [localScanResults, setLocalScanResults] = useState([]);
   const [isProcessingResults, setIsProcessingResults] = useState(false);
   const [showResultsLoading, setShowResultsLoading] = useState(false);
+  const [showDoneButton, setShowDoneButton] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(false);
   const [showApiKeyManager, setShowApiKeyManager] = useState(false);
 
@@ -56,12 +57,13 @@ export default function AIScanCardPremium({
       // Start the parent scan process
       onScan(results);
       
-      // Add a delay to show loading states while parent processes
+      // Show loading for 2 seconds, then show done button instead of continuing to load
       setTimeout(() => {
-        console.log('✅ Results processing complete, displaying results');
+        console.log('✅ Results processing complete, showing done button');
         setIsProcessingResults(false);
         setShowResultsLoading(false);
-      }, 3000); // 3 second delay to show loading while parent processes
+        setShowDoneButton(true);
+      }, 2000); // 2 second delay to show completion
     },
     onProgress: (progress) => {
       setMultiAIProgress(progress);
@@ -306,206 +308,176 @@ export default function AIScanCardPremium({
           </div>
         )}
 
-        {/* Results Section with Loading States */}
-        {showMultiAI && (
-          <div className="space-y-6">
-            {/* Show loading states when scanning is complete but results are being processed */}
-            {!multiAIScanning && (isProcessingResults || showResultsLoading) && multiAIProgress?.apiCompleted && (
-              <div className="space-y-6">
-                {/* Analysis Results Loading */}
-                <div className="bg-white rounded-lg shadow-lg border border-purple-200 p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mr-3"></div>
-                      <h3 className="text-lg font-semibold text-gray-900">Preparing Analysis Results</h3>
-                    </div>
-                    <span className="text-sm text-purple-600 bg-purple-100 px-2 py-1 rounded-full">Processing...</span>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4">
-                      <p className="text-sm text-gray-700 mb-2">
-                        {showResultsLoading ? 
-                          'Finalizing comprehensive analysis results...' : 
-                          'Your comprehensive security analysis is being prepared...'
-                        }
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-600">
-                        <div className="flex items-center">
-                          <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                          Multi-AI analysis completed
+        {/* Results Section - Show completion status after loading */}
+        {!multiAIScanning && multiAIProgress?.apiCompleted && (
+        <div className="space-y-6">
+        {/* Show loading or done state based on processing status */}
+        <div className="bg-white rounded-lg shadow-lg border border-purple-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center">
+          {showDoneButton ? (
+            <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center mr-3">
+              <span className="text-white text-sm">✓</span>
+            </div>
+          ) : (
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600 mr-3"></div>
+          )}
+        <h3 className="text-lg font-semibold text-gray-900">
+          {showDoneButton ? 'Analysis Complete' : 'Processing Analysis Results'}
+        </h3>
+        </div>
+        {showDoneButton ? (
+          <button
+            onClick={() => {
+              // Scroll to the results section
+              const resultsSection = document.querySelector('[data-results-section]');
+              if (resultsSection) {
+                resultsSection.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            className="text-sm text-white bg-green-600 hover:bg-green-700 px-4 py-2 rounded-full transition-colors"
+          >
+            ✅ View Results Below
+          </button>
+        ) : (
+          <span className="text-sm text-purple-600 bg-purple-100 px-2 py-1 rounded-full">Finalizing...</span>
+        )}
+        </div>
+        
+        <div className="space-y-4">
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-4">
+        <p className="text-sm text-gray-700 mb-3">
+          {showDoneButton ? (
+            <>🎉 Multi-AI analysis completed successfully! Your comprehensive security report is ready below.</>
+          ) : (
+            <>🎆 Multi-AI analysis completed successfully! Now preparing your comprehensive security report...</>
+          )}
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-gray-600 mb-4">
+        <div className="flex items-center">
+        <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+        All 6 AI models completed analysis
+        </div>
+        <div className="flex items-center">
+        <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+        Supervisor verification finished
+        </div>
+        <div className="flex items-center">
+        <span className={`w-2 h-2 rounded-full mr-2 ${showDoneButton ? 'bg-green-500' : 'bg-yellow-500 animate-pulse'}`}></span>
+        {showDoneButton ? 'Comprehensive reports ready' : 'Generating comprehensive reports...'}
+        </div>
+        <div className="flex items-center">
+        <span className={`w-2 h-2 rounded-full mr-2 ${showDoneButton ? 'bg-green-500' : 'bg-yellow-500 animate-pulse'}`}></span>
+        {showDoneButton ? 'Interactive dashboard ready' : 'Preparing interactive dashboard...'}
+        </div>
+        </div>
+        
+        {/* Progress Bar - Complete or Loading */}
+        <div className="w-full bg-blue-100 rounded-full h-3 mb-2">
+        <div className={`bg-gradient-to-r from-blue-500 to-purple-600 h-3 rounded-full transition-all duration-1000 ${showDoneButton ? '' : 'animate-pulse'}`}
+        style={{ width: showDoneButton ? '100%' : '75%' }}></div>
+        </div>
+        <p className="text-xs text-blue-600 text-center">
+          {showDoneButton ? 'Analysis complete! Results available below.' : 'Processing comprehensive analysis data...'}
+        </p>
+        </div>
+        
+        {/* What's been prepared */}
+        <div className="bg-white rounded-lg p-4 border border-blue-200">
+        <h4 className="text-sm font-semibold text-gray-800 mb-3">
+          {showDoneButton ? '✅ Ready for you:' : '📋 What\'s being prepared for you:'}
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="flex items-center text-sm text-gray-600">
+        {showDoneButton ? (
+          <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+        ) : (
+          <div className="animate-spin rounded-full h-3 w-3 border-b border-blue-500 mr-2"></div>
+        )}
+        Executive Security Summary
+        </div>
+        <div className="flex items-center text-sm text-gray-600">
+        {showDoneButton ? (
+          <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+        ) : (
+          <div className="animate-spin rounded-full h-3 w-3 border-b border-green-500 mr-2"></div>
+        )}
+        Detailed Vulnerability Reports
+        </div>
+        <div className="flex items-center text-sm text-gray-600">
+        {showDoneButton ? (
+          <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+        ) : (
+          <div className="animate-spin rounded-full h-3 w-3 border-b border-orange-500 mr-2"></div>
+        )}
+          Gas Optimization Analysis
+        </div>
+        <div className="flex items-center text-sm text-gray-600">
+        {showDoneButton ? (
+          <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+        ) : (
+          <div className="animate-spin rounded-full h-3 w-3 border-b border-purple-500 mr-2"></div>
+        )}
+        Professional HTML Reports
+        </div>
+        <div className="flex items-center text-sm text-gray-600">
+        {showDoneButton ? (
+          <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+        ) : (
+          <div className="animate-spin rounded-full h-3 w-3 border-b border-red-500 mr-2"></div>
+        )}
+        AI Specialist Insights
+        </div>
+        <div className="flex items-center text-sm text-gray-600">
+        {showDoneButton ? (
+          <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+        ) : (
+          <div className="animate-spin rounded-full h-3 w-3 border-b border-indigo-500 mr-2"></div>
+        )}
+              Interactive Analysis Dashboard
                         </div>
-                        <div className="flex items-center">
-                          <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                          Supervisor verification done
-                        </div>
-                        <div className="flex items-center">
-                          <span className={`w-2 h-2 rounded-full mr-2 ${
-                            showResultsLoading ? 'bg-green-500' : 'bg-yellow-500 animate-pulse'
-                          }`}></span>
-                          {showResultsLoading ? 'Executive summary ready' : 'Formatting executive summary...'}
-                        </div>
-                        <div className="flex items-center">
-                          <span className={`w-2 h-2 rounded-full mr-2 ${
-                            showResultsLoading ? 'bg-yellow-500 animate-pulse' : 'bg-yellow-500 animate-pulse'
-                          }`}></span>
-                          {showResultsLoading ? 'Rendering final results...' : 'Preparing AI specialist reports...'}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Progress bar for final processing */}
-                    {showResultsLoading && (
-                      <div className="bg-white rounded-lg p-4 border border-blue-200">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-blue-700">Final Processing</span>
-                          <span className="text-sm text-blue-600">Almost ready...</span>
-                        </div>
-                        <div className="w-full bg-blue-100 rounded-full h-2">
-                          <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-1000 animate-pulse" style={{ width: '85%' }}></div>
-                        </div>
-                        <p className="text-xs text-blue-600 mt-2">Rendering comprehensive analysis results and AI specialist reports...</p>
-                      </div>
-                    )}
-                    
-                    {/* Score placeholders */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {['Security Score', 'Gas Optimization', 'Code Quality', 'Overall Score'].map((label, index) => (
-                        <div key={index} className="bg-gray-50 rounded-lg p-4 text-center">
-                          <div className="h-8 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse mb-2"></div>
-                          <div className="text-xs text-gray-500">{label}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* AI Specialist Reports Loading */}
-                <div className="bg-white rounded-lg shadow-lg border border-purple-200 p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mr-3"></div>
-                      <h3 className="text-lg font-semibold text-gray-900">AI Specialist Reports</h3>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-blue-600 bg-blue-100 px-2 py-1 rounded-full">Multi-AI</span>
-                      <span className="text-sm font-bold text-blue-700">{AI_MODELS.length}</span>
-                      <span className="text-xs text-gray-500">Specialists</span>
-                    </div>
-                  </div>
-                  
-                  <p className="text-sm text-gray-600 mb-4">
-                    Individual analysis from specialized AI models
-                  </p>
-                  
-                  <div className="text-xs text-gray-500 mb-4">
-                    Each AI specialist focuses on specific security domains to provide comprehensive analysis coverage.
-                  </div>
-                  
-                  {/* Loading AI specialist cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {AI_MODELS.slice(0, 6).map((model, index) => (
-                      <div key={index} className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-center mb-3">
-                          <div className="w-10 h-10 bg-gradient-to-r from-purple-400 to-blue-500 rounded-full flex items-center justify-center mr-3">
-                            <span className="text-lg">{model.icon}</span>
-                          </div>
-                          <div className="flex-1">
-                            <div className="h-4 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse mb-1"></div>
-                            <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse w-3/4"></div>
-                          </div>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse"></div>
-                          <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse w-5/6"></div>
-                          <div className="h-3 bg-gradient-to-r from-gray-200 to-gray-300 rounded animate-pulse w-4/6"></div>
-                        </div>
-                        
-                        <div className="mt-3 pt-3 border-t border-gray-200">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-500">Analyzing...</span>
-                            <div className="animate-spin rounded-full h-3 w-3 border-b border-gray-400"></div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="flex items-center text-sm text-blue-700">
-                      <div className="animate-pulse mr-2">🔍</div>
-                      <span>Processing individual AI specialist reports... This may take a moment.</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Actual Results */}
-            {!multiAIScanning && !isProcessingResults && !showResultsLoading && localScanResults.length > 0 && (
-              <div className="space-y-4">
-                <div className={`p-4 rounded-xl border ${
-                  localScanResults[0]?.success === false 
-                    ? 'bg-gradient-to-r from-red-50 to-orange-50 border-red-200'
-                    : 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200'
-                }`}>
-                  <div className="flex items-center mb-2">
-                    <span className={`text-xl mr-2 ${
-                      localScanResults[0]?.success === false ? '❌' : '✅'
-                    }`}></span>
-                    <h4 className={`font-semibold ${
-                      localScanResults[0]?.success === false 
-                        ? 'text-red-900' 
-                        : 'text-green-900'
-                    }`}>
-                      {localScanResults[0]?.success === false 
-                        ? 'Multi-AI Analysis Failed' 
-                        : 'Multi-AI Analysis Complete'
-                      }
-                    </h4>
-                  </div>
-                  
-                  {localScanResults[0]?.success === false ? (
-                    <div className="space-y-2">
-                      <p className="text-sm text-red-700">
-                        ⚠️ Analysis encountered an error. Fallback results provided.
-                      </p>
-                      <p className="text-xs text-red-600">
-                        Error: {localScanResults[0]?.error || 'Unknown error'}
-                      </p>
-                      <div className="mt-2 p-2 bg-red-100 rounded-md">
-                        <p className="text-xs text-red-800">
-                          💡 <strong>Suggestions:</strong>
-                        </p>
-                        <ul className="text-xs text-red-700 mt-1 space-y-1">
-                          <li>• Try the <a href="/audit" className="underline font-medium">free analysis option</a></li>
-                          <li>• Check your internet connection and try again</li>
-                          <li>• Contact support if the issue persists</li>
-                        </ul>
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <p className="text-sm text-green-700">
-                        🚀 Comprehensive analysis completed with {AI_MODELS.length} specialized models
-                      </p>
-                      <div className="mt-2 text-xs text-green-600">
-                        • Analysis completed successfully
-                        • Supervisor verification: ✅ Verified
-                        • Analysis confidence: 95%
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <AuditProExporter 
-                  scanResults={localScanResults}
-                  contractInfo={contractInfo}
-                />
-              </div>
-            )}
           </div>
+        </div>
+        
+        {/* Success indicators */}
+        <div className={`border rounded-lg p-4 ${showDoneButton ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'}`}>
+        <div className="flex items-center text-sm">
+        <span className={`text-lg mr-2 ${showDoneButton ? 'text-green-500' : 'text-blue-500'}`}>
+          {showDoneButton ? '🎉' : '✅'}
+        </span>
+        <div>
+        <p className={`font-medium ${showDoneButton ? 'text-green-700' : 'text-blue-700'}`}>
+          {showDoneButton ? 'Ready to Review!' : 'Analysis Completed Successfully!'}
+        </p>
+        <p className={`text-xs mt-1 ${showDoneButton ? 'text-green-600' : 'text-blue-600'}`}>
+          {showDoneButton ? (
+            <>Your comprehensive security analysis is ready! Scroll down to review detailed findings, professional reports, and actionable recommendations.</>
+          ) : (
+            <>Your comprehensive security analysis will appear below in just a moment. This includes detailed findings, professional reports, and actionable recommendations.</>
+          )}
+            </p>
+          </div>
+        </div>
+        </div>
+        
+        {/* Time estimate or completion */}
+        <div className="text-center">
+        {showDoneButton ? (
+          <div className="inline-flex items-center text-xs text-green-600 bg-green-50 px-3 py-2 rounded-full">
+            <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+            Analysis complete! Check results below.
+          </div>
+        ) : (
+          <div className="inline-flex items-center text-xs text-gray-500 bg-gray-50 px-3 py-2 rounded-full">
+            <div className="animate-spin rounded-full h-3 w-3 border-b border-gray-400 mr-2"></div>
+            Usually takes 10-30 seconds to finalize...
+          </div>
+        )}
+        </div>
+        </div>
+        </div>
+        </div>
         )}
 
         {/* API Key Notice */}

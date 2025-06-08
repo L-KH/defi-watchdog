@@ -704,11 +704,11 @@ function generateGasAnalysisSection(gasOptimizations) {
         <div class="gas-optimization">
           <div class="opt-header">
             <h4>${opt.title || 'Optimization'}</h4>
-            <span class="difficulty-badge ${(opt.difficulty || 'medium').toLowerCase()}">${opt.difficulty || 'MEDIUM'}</span>
+            <span class="difficulty-badge ${getDifficultyClass(opt)}">${getDifficultyText(opt)}</span>
           </div>
           <p>${opt.description || 'No description available'}</p>
           <div class="savings-info">
-            <span class="savings">💰 Savings: ${opt.savings || 'Unknown'}</span>
+            <span class="savings">💰 Savings: ${getSavingsText(opt)}</span>
             <span class="location">📍 ${opt.location || 'Unknown location'}</span>
           </div>
           ${opt.codeExample ? `<div class="code-example"><pre><code>${opt.codeExample}</code></pre></div>` : ''}
@@ -716,6 +716,45 @@ function generateGasAnalysisSection(gasOptimizations) {
       ` : '').join('')}
     </div>
   `;
+}
+
+// Helper functions for gas optimization
+function getDifficultyClass(opt) {
+  if (!opt) return 'medium';
+  
+  let difficulty = 'medium';
+  if (opt.difficulty) {
+    difficulty = typeof opt.difficulty === 'string' ? opt.difficulty : 'medium';
+  } else if (opt.implementation && opt.implementation.difficulty) {
+    difficulty = opt.implementation.difficulty;
+  }
+  
+  return (difficulty || 'medium').toString().toLowerCase();
+}
+
+function getDifficultyText(opt) {
+  if (!opt) return 'MEDIUM';
+  
+  let difficulty = 'MEDIUM';
+  if (opt.difficulty) {
+    difficulty = typeof opt.difficulty === 'string' ? opt.difficulty : 'MEDIUM';
+  } else if (opt.implementation && opt.implementation.difficulty) {
+    difficulty = opt.implementation.difficulty;
+  }
+  
+  return (difficulty || 'MEDIUM').toString().toUpperCase();
+}
+
+function getSavingsText(opt) {
+  if (!opt) return 'Unknown';
+  
+  if (opt.savings) {
+    return opt.savings;
+  } else if (opt.impact && opt.impact.gasReduction) {
+    return opt.impact.gasReduction;
+  }
+  
+  return 'Unknown';
 }
 
 function generateCodeQualitySection(qualityIssues) {
@@ -737,7 +776,7 @@ function generateCodeQualitySection(qualityIssues) {
       <h4>${category} (${issues.length})</h4>
       <div class="quality-issues">
         ${issues.map(issue => issue ? `
-          <div class="quality-issue ${(issue.severity || 'low').toLowerCase()}">
+          <div class="quality-issue ${getIssueSeverityClass(issue)}">
             <h5>${issue.title || 'Issue'}</h5>
             <p>${issue.description || 'No description available'}</p>
             <p><strong>Recommendation:</strong> ${issue.recommendation || 'No recommendation available'}</p>
@@ -746,6 +785,25 @@ function generateCodeQualitySection(qualityIssues) {
       </div>
     </div>
   `).join('');
+}
+
+// Helper function to safely get severity class
+function getIssueSeverityClass(issue) {
+  if (!issue) return 'low';
+  
+  // Handle impact as object or string
+  let severity = 'low';
+  if (issue.severity) {
+    severity = typeof issue.severity === 'string' ? issue.severity : 'low';
+  } else if (issue.impact) {
+    if (typeof issue.impact === 'string') {
+      severity = issue.impact;
+    } else if (typeof issue.impact === 'object' && issue.impact.severity) {
+      severity = issue.impact.severity;
+    }
+  }
+  
+  return (severity || 'low').toString().toLowerCase();
 }
 
 function generateAIMethodologySection(analysisMetadata) {
@@ -815,21 +873,143 @@ function generatePatternAnalysisSection(patterns) {
 function categorizeSecurityFindings(securityFindings) {
   const categorized = {};
   
-  Object.entries(securityFindings).forEach(([category, findings]) => {
-    categorized[category] = findings.map(finding => ({
-      severity: finding.severity,
-      title: finding.title,
-      description: finding.description,
-      location: finding.location,
-      impact: finding.impact,
-      recommendation: finding.recommendation,
-      confidence: finding.confidence,
-      reportedBy: finding.reportedBy,
-      supervisorVerified: finding.supervisorVerified || false
-    }));
+  // Handle both array and object formats safely
+  let findingsArray = [];
+  
+  if (Array.isArray(securityFindings)) {
+    findingsArray = securityFindings;
+  } else if (typeof securityFindings === 'object' && securityFindings) {
+    // Flatten object format to array
+    findingsArray = Object.values(securityFindings).flat().filter(f => f);
+  }
+  
+  // Group findings by category or severity
+  const categories = {
+    'Access Control': [],
+    'Reentrancy': [],
+    'Integer Issues': [],
+    'External Calls': [],
+    'DeFi Specific': [],
+    'Gas Optimization': [],
+    'Code Quality': [],
+    'Other': []
+  };
+  
+  findingsArray.forEach(finding => {
+    if (!finding) return;
+    
+    const title = (finding.title || '').toLowerCase();
+    const category = finding.category || '';
+    
+    // Categorize based on title or category
+    if (title.includes('access') || title.includes('permission') || title.includes('owner') || category.includes('access')) {
+      categories['Access Control'].push({
+        severity: finding.severity,
+        title: finding.title,
+        description: finding.description,
+        location: finding.location,
+        impact: finding.impact,
+        recommendation: finding.recommendation,
+        confidence: finding.confidence,
+        reportedBy: finding.reportedBy,
+        supervisorVerified: finding.supervisorVerified || false
+      });
+    } else if (title.includes('reentrancy') || title.includes('callback') || category.includes('reentrancy')) {
+      categories['Reentrancy'].push({
+        severity: finding.severity,
+        title: finding.title,
+        description: finding.description,
+        location: finding.location,
+        impact: finding.impact,
+        recommendation: finding.recommendation,
+        confidence: finding.confidence,
+        reportedBy: finding.reportedBy,
+        supervisorVerified: finding.supervisorVerified || false
+      });
+    } else if (title.includes('overflow') || title.includes('underflow') || title.includes('integer') || category.includes('integer')) {
+      categories['Integer Issues'].push({
+        severity: finding.severity,
+        title: finding.title,
+        description: finding.description,
+        location: finding.location,
+        impact: finding.impact,
+        recommendation: finding.recommendation,
+        confidence: finding.confidence,
+        reportedBy: finding.reportedBy,
+        supervisorVerified: finding.supervisorVerified || false
+      });
+    } else if (title.includes('call') || title.includes('external') || category.includes('external')) {
+      categories['External Calls'].push({
+        severity: finding.severity,
+        title: finding.title,
+        description: finding.description,
+        location: finding.location,
+        impact: finding.impact,
+        recommendation: finding.recommendation,
+        confidence: finding.confidence,
+        reportedBy: finding.reportedBy,
+        supervisorVerified: finding.supervisorVerified || false
+      });
+    } else if (title.includes('defi') || title.includes('liquidity') || title.includes('swap') || category.includes('defi')) {
+      categories['DeFi Specific'].push({
+        severity: finding.severity,
+        title: finding.title,
+        description: finding.description,
+        location: finding.location,
+        impact: finding.impact,
+        recommendation: finding.recommendation,
+        confidence: finding.confidence,
+        reportedBy: finding.reportedBy,
+        supervisorVerified: finding.supervisorVerified || false
+      });
+    } else if (title.includes('gas') || title.includes('optimization') || category.includes('gas')) {
+      categories['Gas Optimization'].push({
+        severity: finding.severity,
+        title: finding.title,
+        description: finding.description,
+        location: finding.location,
+        impact: finding.impact,
+        recommendation: finding.recommendation,
+        confidence: finding.confidence,
+        reportedBy: finding.reportedBy,
+        supervisorVerified: finding.supervisorVerified || false
+      });
+    } else if (title.includes('quality') || title.includes('documentation') || category.includes('quality')) {
+      categories['Code Quality'].push({
+        severity: finding.severity,
+        title: finding.title,
+        description: finding.description,
+        location: finding.location,
+        impact: finding.impact,
+        recommendation: finding.recommendation,
+        confidence: finding.confidence,
+        reportedBy: finding.reportedBy,
+        supervisorVerified: finding.supervisorVerified || false
+      });
+    } else {
+      categories['Other'].push({
+        severity: finding.severity,
+        title: finding.title,
+        description: finding.description,
+        location: finding.location,
+        impact: finding.impact,
+        recommendation: finding.recommendation,
+        confidence: finding.confidence,
+        reportedBy: finding.reportedBy,
+        supervisorVerified: finding.supervisorVerified || false
+      });
+    }
   });
   
-  return categorized;
+  // Only return categories that have findings
+  const result = {};
+  Object.entries(categories).forEach(([category, findings]) => {
+    if (findings.length > 0) {
+      result[category] = findings;
+    }
+  });
+  
+  return result;
 }
 
 function identifyRiskFactors(securityFindings) {
@@ -866,7 +1046,15 @@ function identifyRiskFactors(securityFindings) {
 
 function evaluateComplianceScore(findings) {
   const securityFindings = findings.security || {};
-  const totalIssues = Object.values(securityFindings).flat().filter(f => f).length;
+  let totalIssues = 0;
+  
+  // Handle both array and object formats
+  if (Array.isArray(securityFindings)) {
+    totalIssues = securityFindings.filter(f => f).length;
+  } else if (typeof securityFindings === 'object') {
+    totalIssues = Object.values(securityFindings).flat().filter(f => f).length;
+  }
+  
   const qualityIssues = Array.isArray(findings.codeQuality) ? findings.codeQuality.length : 0;
   
   let score = 100;
@@ -955,13 +1143,28 @@ function prioritizeRisks(riskMatrix) {
 function calculateCategoryBreakdown(securityFindings) {
   const breakdown = {};
   
-  Object.entries(securityFindings).forEach(([category, findings]) => {
-    if (Array.isArray(findings)) {
-      breakdown[category] = findings.length;
-    } else {
-      breakdown[category] = 0;
-    }
-  });
+  // Handle both array and object formats
+  if (Array.isArray(securityFindings)) {
+    // If it's an array, group by severity or category
+    const groupedByCategory = {};
+    securityFindings.forEach(finding => {
+      const category = finding.category || finding.severity || 'Other';
+      if (!groupedByCategory[category]) {
+        groupedByCategory[category] = 0;
+      }
+      groupedByCategory[category]++;
+    });
+    return groupedByCategory;
+  } else if (typeof securityFindings === 'object' && securityFindings) {
+    // If it's an object with categories
+    Object.entries(securityFindings).forEach(([category, findings]) => {
+      if (Array.isArray(findings)) {
+        breakdown[category] = findings.length;
+      } else {
+        breakdown[category] = 0;
+      }
+    });
+  }
   
   return breakdown;
 }
