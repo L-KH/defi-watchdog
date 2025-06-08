@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import useMultiAIScanner, { AI_MODELS } from './MultiAIScanner';
 import AuditProExporter from './export/AuditProExporter';
+import APIKeyManager from '../settings/APIKeyManager';
 
 export default function AIScanCardPremium({ 
   isScanning: externalIsScanning, 
@@ -20,6 +21,18 @@ export default function AIScanCardPremium({
   const [localScanResults, setLocalScanResults] = useState([]);
   const [isProcessingResults, setIsProcessingResults] = useState(false);
   const [showResultsLoading, setShowResultsLoading] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(false);
+  const [showApiKeyManager, setShowApiKeyManager] = useState(false);
+
+  // Check for API key on mount
+  useEffect(() => {
+    const checkApiKey = () => {
+      const apiKey = localStorage.getItem('openrouter_api_key') || 
+                     process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
+      setHasApiKey(!!apiKey);
+    };
+    checkApiKey();
+  }, []);
 
   // Initialize MultiAIScanner
   const {
@@ -56,8 +69,24 @@ export default function AIScanCardPremium({
   });
 
   const handleStartAnalysis = async () => {
+    // Check for API key before starting
+    const apiKey = localStorage.getItem('openrouter_api_key') || 
+                   process.env.NEXT_PUBLIC_OPENROUTER_API_KEY;
+    
+    if (!apiKey) {
+      setShowApiKeyManager(true);
+      return;
+    }
+    
     setShowMultiAI(true);
     await performMultiAIScan();
+  };
+
+  const handleApiKeyUpdate = (newKey) => {
+    setHasApiKey(!!newKey);
+    if (newKey) {
+      setShowApiKeyManager(false);
+    }
   };
 
   const isScanning = externalIsScanning || multiAIScanning;
@@ -89,6 +118,20 @@ export default function AIScanCardPremium({
       </div>
 
       <div className="p-8">
+        {/* API Key Manager */}
+        {showApiKeyManager && (
+          <div className="mb-6">
+            <APIKeyManager onKeyUpdate={handleApiKeyUpdate} />
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => setShowApiKeyManager(false)}
+                className="text-sm text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
         {/* Live Progress Display During Scanning */}
         {showMultiAI && multiAIScanning && (
           <div className="mb-6">
@@ -465,8 +508,37 @@ export default function AIScanCardPremium({
           </div>
         )}
 
+        {/* API Key Notice */}
+        {!hasApiKey && !showApiKeyManager && !showMultiAI && (
+          <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-yellow-800">
+                  OpenRouter API Key Required
+                </h3>
+                <div className="mt-2 text-sm text-yellow-700">
+                  <p>
+                    To use the premium multi-AI analysis, you need to configure your OpenRouter API key.
+                  </p>
+                  <button
+                    onClick={() => setShowApiKeyManager(true)}
+                    className="mt-2 text-sm font-medium text-yellow-800 hover:text-yellow-900 underline"
+                  >
+                    Configure API Key →
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Premium Plan Display and Action Button */}
-        {!showMultiAI && (
+        {!showMultiAI && !showApiKeyManager && (
           <div className="mb-8">
             <div className="text-center mb-6">
               <h3 className="text-2xl font-bold text-gray-900 mb-2">Premium Multi-AI Security Analysis</h3>
@@ -521,7 +593,7 @@ export default function AIScanCardPremium({
         )}
 
         {/* Action Button */}
-        {!showMultiAI && (
+        {!showMultiAI && !showApiKeyManager && (
           <button
             onClick={handleStartAnalysis}
             disabled={isScanning || !contractSource}
@@ -541,7 +613,7 @@ export default function AIScanCardPremium({
           </button>
         )}
 
-        {!contractSource && !showMultiAI && (
+        {!contractSource && !showMultiAI && !showApiKeyManager && (
           <p className="text-center text-sm text-gray-500 mt-3">
             Please load a contract first to start the analysis
           </p>

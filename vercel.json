@@ -1,22 +1,14 @@
 {
-  "functions": {
-    "src/pages/api/ai-analysis.js": {
-      "maxDuration": 10
-    },
-    "src/pages/api/audit/comprehensive.js": {
-      "maxDuration": 10
-    }
-  },
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
   "env": {
     "NEXT_PUBLIC_USE_CLIENT_AI": "true"
   },
-  "build": {
-    "env": {
-      "NEXT_PUBLIC_USE_CLIENT_AI": "true",
-      "NODE_ENV": "production"
+  "functions": {
+    "src/pages/api/*.js": {
+      "maxDuration": 30
     }
   },
-  "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "outputDirectory": ".next"
+  "regions": ["iad1"]
 }

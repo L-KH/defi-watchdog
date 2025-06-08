@@ -1,26 +1,35 @@
 // Client-side AI Analysis using OpenRouter API directly from browser
 // This avoids Vercel's 10-second timeout limitation
 
-const OPENROUTER_API_KEY = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY || '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';
+const OPENROUTER_API_KEY = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY || 
+                           process.env.OPENROUTER_API_KEY ||
+                           (typeof window !== 'undefined' ? localStorage.getItem('openrouter_api_key') : null);
 
 // AI Models configuration for client-side
+// Updated with confirmed working models from OpenRouter
 const AI_MODELS = {
   basic: [
-    { id: 'google/gemma-2b-it', name: 'Gemma 2B' }
+    { id: 'meta-llama/llama-3.2-3b-instruct:free', name: 'Llama 3.2', maxTokens: 3000 }
   ],
   premium: [
-    { id: 'google/gemma-2b-it', name: 'Gemma 2B' },
-    { id: 'deepseek/deepseek-chat', name: 'DeepSeek Chat' },
-    { id: 'meta-llama/llama-3.2-3b-instruct:free', name: 'Llama 3.2' },
-    { id: 'liquid/lfm-40b:free', name: 'Liquid LFM 40B' },
-    { id: 'qwen/qwen-2.5-7b-instruct:free', name: 'Qwen 2.5' },
-    { id: 'gryphe/mythomax-l2-13b:free', name: 'MythoMax' }
+    { id: 'meta-llama/llama-3.2-3b-instruct:free', name: 'Llama 3.2', maxTokens: 3000 },
+    { id: 'deepseek/deepseek-chat', name: 'DeepSeek Chat', maxTokens: 4000 },
+    { id: 'qwen/qwen-2.5-7b-instruct:free', name: 'Qwen 2.5', maxTokens: 4000 },
+    { id: 'microsoft/wizardlm-2-8x22b', name: 'WizardLM 2', maxTokens: 4000 },
+    { id: 'google/gemini-2.0-flash-exp:free', name: 'Gemini 2.0 Flash', maxTokens: 8000 },
+    { id: 'mistralai/mistral-small', name: 'Mistral Small', maxTokens: 4000 }
   ]
 };
 
 // Generate security analysis prompt
 function generateSecurityPrompt(sourceCode, contractName, options = {}) {
-  const { type = 'basic', customPrompt = null } = options;
+  const { type = 'basic', customPrompt = null, shortened = false } = options;
+  
+  // For models with smaller context windows, truncate the source code if needed
+  let truncatedSource = sourceCode;
+  if (shortened && sourceCode.length > 10000) {
+    truncatedSource = sourceCode.substring(0, 10000) + '\n// ... [code truncated for analysis]';
+  }
   
   const basePrompt = `You are an expert smart contract security auditor. Analyze the following smart contract for security vulnerabilities, gas optimization opportunities, and code quality issues.
 
@@ -70,7 +79,7 @@ ${customPrompt ? `Additional Instructions: ${customPrompt}` : ''}
 
 Contract Source Code:
 \`\`\`solidity
-${sourceCode}
+${truncatedSource}
 \`\`\`
 
 Provide comprehensive analysis focusing on security vulnerabilities, gas optimizations, and code quality.`;
@@ -78,9 +87,60 @@ Provide comprehensive analysis focusing on security vulnerabilities, gas optimiz
   return basePrompt;
 }
 
+// Simple rate limiter for free models
+const rateLimiter = {
+  requests: [],
+  maxRequests: 15, // Stay under the 20/min limit
+  windowMs: 60000, // 1 minute
+  
+  canMakeRequest() {
+    const now = Date.now();
+    // Remove old requests
+    this.requests = this.requests.filter(time => now - time < this.windowMs);
+    
+    if (this.requests.length >= this.maxRequests) {
+      return false;
+    }
+    
+    this.requests.push(now);
+    return true;
+  },
+  
+  getWaitTime() {
+    if (this.requests.length === 0) return 0;
+    const oldestRequest = Math.min(...this.requests);
+    const waitTime = this.windowMs - (Date.now() - oldestRequest);
+    return Math.max(0, waitTime);
+  }
+};
+
 // Call OpenRouter API directly from client
 async function callOpenRouterAPI(prompt, model, options = {}) {
   const { timeout = 120000 } = options;
+  
+  // Validate API key
+  if (!OPENROUTER_API_KEY || !OPENROUTER_API_KEY.startsWith('sk-')) {
+    throw new Error('OpenRouter API key not configured or invalid format');
+  }
+  
+  // Check rate limit for free models
+  if (model.id.includes(':free')) {
+    if (!rateLimiter.canMakeRequest()) {
+      const waitTime = rateLimiter.getWaitTime();
+      console.log(`Rate limit reached for free model ${model.name}, waiting ${Math.ceil(waitTime/1000)}s...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime + 1000));
+      // Try again after waiting
+      if (!rateLimiter.canMakeRequest()) {
+        console.warn(`Still rate limited for ${model.name}, skipping...`);
+        return JSON.stringify({
+          error: 'Rate limit exceeded',
+          findings: [],
+          securityScore: 0,
+          riskLevel: 'Unknown'
+        });
+      }
+    }
+  }
   
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -107,7 +167,7 @@ async function callOpenRouterAPI(prompt, model, options = {}) {
           }
         ],
         temperature: 0.1,
-        max_tokens: 4000,
+        max_tokens: Math.min(4000, model.maxTokens || 4000),
         response_format: { type: "json_object" }
       }),
       signal: controller.signal
@@ -116,8 +176,16 @@ async function callOpenRouterAPI(prompt, model, options = {}) {
     clearTimeout(timeoutId);
     
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'API request failed' }));
-      throw new Error(error.error?.message || `API error: ${response.status}`);
+      const errorData = await response.json().catch(() => ({ error: 'API request failed' }));
+      const errorMessage = errorData.error?.message || errorData.error || `API error: ${response.status}`;
+      console.warn(`OpenRouter API error for ${model.id}:`, errorMessage);
+      // Don't throw, just return an error response
+      return JSON.stringify({
+        error: errorMessage,
+        findings: [],
+        securityScore: 0,
+        riskLevel: 'Unknown'
+      });
     }
     
     const data = await response.json();
@@ -134,7 +202,20 @@ async function callOpenRouterAPI(prompt, model, options = {}) {
 // Parse AI response with fallback
 function parseAIResponse(response, model) {
   try {
-    const parsed = JSON.parse(response);
+    // Clean response - remove markdown code blocks if present
+    let cleanResponse = response;
+    if (typeof response === 'string') {
+      // Remove ```json and ``` markers
+      cleanResponse = response.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+      
+      // Try to extract JSON object if wrapped in other text
+      const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);  
+      if (jsonMatch) {
+        cleanResponse = jsonMatch[0];
+      }
+    }
+    
+    const parsed = JSON.parse(cleanResponse);
     return {
       success: true,
       analysis: parsed,
@@ -196,7 +277,10 @@ export async function analyzeWithAIClient(sourceCode, contractName, options = {}
     try {
       progressCallback?.({ phase: 'Analyzing with AI...', progress: 50 });
       
-      const prompt = generateSecurityPrompt(sourceCode, contractName, options);
+      const prompt = generateSecurityPrompt(sourceCode, contractName, {
+        ...options,
+        shortened: sourceCode.length > 15000
+      });
       const response = await callOpenRouterAPI(prompt, models[0], options);
       const result = parseAIResponse(response, models[0]);
       
@@ -225,12 +309,17 @@ export async function analyzeWithAIClient(sourceCode, contractName, options = {}
     }
   }
   
-  // For premium analysis, use multiple models
+  // For premium analysis, use multiple models with staggered execution
   const totalModels = models.length;
   let completed = 0;
   
-  // Run all models in parallel
+  // Run models with slight delays to avoid rate limits
   const promises = models.map(async (model, index) => {
+    // Add delay between model calls for free models
+    if (model.id.includes(':free') && index > 0) {
+      await new Promise(resolve => setTimeout(resolve, 3000 * index)); // 3 second delay between free models
+    }
+    
     try {
       progressCallback?.({
         phase: `Analyzing with ${model.name}...`,
@@ -238,7 +327,10 @@ export async function analyzeWithAIClient(sourceCode, contractName, options = {}
         activeModels: [model.name]
       });
       
-      const prompt = generateSecurityPrompt(sourceCode, contractName, options);
+      const prompt = generateSecurityPrompt(sourceCode, contractName, {
+        ...options,
+        shortened: model.name === 'Llama 3.2' || sourceCode.length > 15000
+      });
       const response = await callOpenRouterAPI(prompt, model, options);
       const result = parseAIResponse(response, model);
       
@@ -250,7 +342,8 @@ export async function analyzeWithAIClient(sourceCode, contractName, options = {}
       
       return result;
     } catch (error) {
-      console.error(`Model ${model.name} failed:`, error);
+      console.error(`Model ${model.name} failed:`, error.message);
+      // Don't throw the error up, just return a failure result
       return {
         success: false,
         error: error.message,
@@ -364,5 +457,17 @@ function removeDuplicates(array, key) {
 
 // Export configuration check
 export function isClientSideAnalysisEnabled() {
-  return !!OPENROUTER_API_KEY && OPENROUTER_API_KEY !== 'your-api-key-here';
+  return !!OPENROUTER_API_KEY && 
+         OPENROUTER_API_KEY !== 'your-api-key-here' && 
+         OPENROUTER_API_KEY.startsWith('sk-') && 
+         OPENROUTER_API_KEY.length > 50 &&
+         !OPENROUTER_API_KEY.includes('your_');
+}
+
+// Make functions available globally for dynamic imports (fixes webpack issues)
+if (typeof window !== 'undefined') {
+  window.__clientAiAnalysis = {
+    analyzeWithAIClient,
+    isClientSideAnalysisEnabled
+  };
 }

@@ -1,5 +1,5 @@
 // Enhanced AI Analysis with client-side fallback for Vercel deployment
-import { analyzeWithAIClient, isClientSideAnalysisEnabled } from './clientAiAnalysis';
+import { analyzeWithAIClient, isClientSideAnalysisEnabled } from './aiAnalysisLoader';
 
 /**
  * Main AI analysis function - Tries server API first, falls back to client-side
@@ -12,8 +12,9 @@ export async function analyzeWithAI(sourceCode, contractName, options = {}) {
   const startTime = Date.now();
   
   // Check if we should use client-side analysis (for Vercel deployment)
-  const useClientSide = isClientSideAnalysisEnabled() && 
-    (process.env.NEXT_PUBLIC_USE_CLIENT_AI === 'true' || 
+  const clientEnabled = await isClientSideAnalysisEnabled();
+  const useClientSide = clientEnabled && 
+  (process.env.NEXT_PUBLIC_USE_CLIENT_AI === 'true' || 
      process.env.NODE_ENV === 'production');
   
   if (useClientSide) {

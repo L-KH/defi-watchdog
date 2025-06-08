@@ -274,21 +274,27 @@ function useMultiAIScanner({
       let apiPromise;
       
       if (useClientSide) {
-        // Use client-side AI analysis for Vercel
+        // Use the comprehensive audit module directly
         console.log('🌐 Using client-side comprehensive analysis');
         
-        const { analyzeWithAIClient } = await import('../../../lib/clientAiAnalysis');
+        // Import the comprehensive audit module
+        const comprehensiveModule = await import('../../lib/comprehensive-audit');
         
-        apiPromise = analyzeWithAIClient(contractSource, contractInfo.contractName || 'Contract', {
-          type: 'premium',
+        // Use the runComprehensiveAudit function with client-side configuration
+        apiPromise = comprehensiveModule.runComprehensiveAudit(contractSource, contractInfo.contractName || 'Contract', {
+          tier: 'premium',
           timeout: 300000,
+          enhanced: true,
+          reportFormats: ['html', 'json'],
           progressCallback: (progress) => {
-            setMultiAIProgress({
-              ...progress,
-              totalModels: AI_MODELS.length,
-              completedModels: Math.floor((progress.progress || 0) / 100 * AI_MODELS.length),
-              apiCompleted: progress.progress >= 100
-            });
+            if (onProgress) {
+              onProgress({
+                ...progress,
+                totalModels: AI_MODELS.length,
+                completedModels: Math.floor((progress.progress || 0) / 100 * AI_MODELS.length),
+                apiCompleted: progress.progress >= 100
+              });
+            }
           }
         });
       } else {
@@ -343,12 +349,20 @@ function useMultiAIScanner({
       
       await new Promise(resolve => setTimeout(resolve, 2000)); // Brief supervisor phase
       
-      // Process results (same as before)
+      // Process results
       const findings = comprehensiveResult?.findings || { security: [], gasOptimization: [], codeQuality: [] };
       const scores = comprehensiveResult?.scores || { security: 75, gasOptimization: 80, codeQuality: 85, overall: 75 };
       const executiveSummary = comprehensiveResult?.executiveSummary || { summary: 'Analysis completed', riskLevel: 'Medium Risk' };
       const aiModelsUsed = comprehensiveResult?.aiModelsUsed || [];
       const supervisorVerification = comprehensiveResult?.supervisorVerification || { verified: false, confidenceLevel: '70%' };
+      
+      // Check if we have proper data structure
+      console.log('📊 Comprehensive result structure:', {
+        hasFindings: !!comprehensiveResult?.findings,
+        hasScores: !!comprehensiveResult?.scores,
+        hasSummary: !!comprehensiveResult?.executiveSummary,
+        findingsCount: findings.security?.length || 0
+      });
       
       const securityFindings = findings.security || [];
       const gasOptimizations = findings.gasOptimization || [];
@@ -480,9 +494,16 @@ function useMultiAIScanner({
     } catch (error) {
       console.error('💥 Multi-AI scan failed:', error);
       
+      // Check if it's an API key error
+      const isApiKeyError = error.message && (
+        error.message.includes('API key') || 
+        error.message.includes('OpenRouter') ||
+        error.message.includes('not configured')
+      );
+      
       // Mark all models as error
       AI_MODELS.forEach(model => {
-        updateModelProgress(model.id, 'error', error.message);
+        updateModelProgress(model.id, 'error', isApiKeyError ? 'API key not configured' : error.message);
       });
       
       setAnalysisPhase('error');
@@ -512,14 +533,16 @@ function useMultiAIScanner({
       
       const fallbackFinalResults = {
         success: false,
-        error: error.message,
+        error: isApiKeyError ? 'OpenRouter API key not configured. Please add your API key in settings.' : error.message,
         type: 'premium',
         model: 'Multi-AI Analysis (Failed)',
         contractName: contractInfo.contractName,
         analysis: {
           aiReportCards: fallbackResults,
           supervisorSummary: {
-            executiveSummary: `Analysis failed: ${error.message}`,
+            executiveSummary: isApiKeyError ? 
+              'Analysis requires OpenRouter API key. Please configure your API key to enable AI-powered security analysis.' : 
+              `Analysis failed: ${error.message}`,
             consensus: 'Unable to establish consensus due to analysis failure',
             riskLevel: 'Unknown',
             overallScore: 0,

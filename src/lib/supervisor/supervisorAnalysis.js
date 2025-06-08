@@ -22,10 +22,13 @@
  * Simple API calling function for supervisor analysis
  */
 async function callOpenRouterAPIServer({ model, prompt, sourceCode, contractName, maxTokens = 4000, temperature = 0.1 }) {
-  const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+  // Check multiple sources for API key
+  const OPENROUTER_API_KEY = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY || 
+                              process.env.OPENROUTER_API_KEY ||
+                              (typeof window !== 'undefined' ? localStorage.getItem('openrouter_api_key') : null);
   
   if (!OPENROUTER_API_KEY) {
-    throw new Error('OpenRouter API key not configured');
+    throw new Error('OpenRouter API key not configured. Please add your API key in settings or set NEXT_PUBLIC_OPENROUTER_API_KEY environment variable.');
   }
   
   const fullPrompt = sourceCode 
@@ -37,7 +40,7 @@ async function callOpenRouterAPIServer({ model, prompt, sourceCode, contractName
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-      'HTTP-Referer': process.env.NEXTAUTH_URL || 'http://localhost:3000',
+      'HTTP-Referer': typeof window !== 'undefined' ? window.location.origin : (process.env.NEXTAUTH_URL || 'http://localhost:3000'),
       'X-Title': 'DeFi Watchdog Supervisor Analysis'
     },
     body: JSON.stringify({
@@ -89,9 +92,57 @@ export async function runSupervisedPremiumAnalysis(sourceCode, contractName, opt
   const startTime = Date.now();
   const analysisId = generateAnalysisId();
   
+  // Check if API key is available
+  const apiKey = process.env.NEXT_PUBLIC_OPENROUTER_API_KEY || 
+                 process.env.OPENROUTER_API_KEY ||
+                 (typeof window !== 'undefined' ? localStorage.getItem('openrouter_api_key') : null);
+  
+  const hasValidApiKey = apiKey && apiKey.trim().length > 0 && !apiKey.includes('your_') && apiKey.startsWith('sk-');
+  
+  if (!hasValidApiKey) {
+    console.warn('⚠️ No OpenRouter API key found. Using fallback analysis.');
+    
+    // Use fallback analysis
+    try {
+      const { runFallbackSecurityAnalysis, createFallbackReport } = await import('../security/fallbackAnalysis.js');
+      const fallbackAnalysis = await runFallbackSecurityAnalysis(sourceCode, contractName);
+      const fallbackReport = createFallbackReport(fallbackAnalysis, contractName);
+      
+      return {
+        ...fallbackReport,
+        analysisId: analysisId,
+        analysisTime: Date.now() - startTime,
+        metadata: {
+          ...fallbackReport.analysisMetadata,
+          fallbackMode: true,
+          message: 'Using fallback static analysis. Configure OpenRouter API key for full AI analysis.'
+        }
+      };
+    } catch (fallbackError) {
+      console.error('❌ Fallback analysis also failed:', fallbackError);
+      throw new Error(`Analysis failed: ${fallbackError.message}`);
+    }
+  }
+  
   try {
     // Phase 1: Multi-AI Parallel Analysis
     const parallelResults = await runParallelAIAnalysis(sourceCode, contractName, options);
+    
+    // Check if we got a fallback result
+    if (parallelResults.fallbackUsed) {
+      console.log('📊 Using fallback static analysis report');
+      return {
+        ...parallelResults.fallbackReport,
+        analysisId: analysisId,
+        analysisTime: Date.now() - startTime,
+        metadata: {
+          ...parallelResults.fallbackReport.analysisMetadata,
+          fallbackMode: true,
+          originalModelsAttempted: parallelResults.totalModels,
+          message: 'AI analysis unavailable. Using static pattern matching.'
+        }
+      };
+    }
     
     // Phase 2: Supervisor Review & Consensus Building
     const supervisorResult = await runSupervisorReview(parallelResults, sourceCode, contractName);
@@ -134,7 +185,29 @@ export async function runSupervisedPremiumAnalysis(sourceCode, contractName, opt
     
   } catch (error) {
     console.error('❌ Supervised premium analysis failed:', error);
-    throw new Error(`Premium analysis failed: ${error.message}`);
+    
+    // Try fallback analysis if premium analysis fails
+    console.log('🔄 Attempting fallback analysis after premium failure...');
+    try {
+      const { runFallbackSecurityAnalysis, createFallbackReport } = await import('../security/fallbackAnalysis.js');
+      const fallbackAnalysis = await runFallbackSecurityAnalysis(sourceCode, contractName);
+      const fallbackReport = createFallbackReport(fallbackAnalysis, contractName);
+      
+      return {
+        ...fallbackReport,
+        analysisId: analysisId,
+        analysisTime: Date.now() - startTime,
+        metadata: {
+          ...fallbackReport.analysisMetadata,
+          fallbackMode: true,
+          originalError: error.message,
+          message: 'Premium analysis failed. Using fallback static analysis.'
+        }
+      };
+    } catch (fallbackError) {
+      console.error('❌ Fallback analysis also failed:', fallbackError);
+      throw new Error(`All analysis methods failed. Premium: ${error.message}, Fallback: ${fallbackError.message}`);
+    }
   }
 }
 
@@ -144,43 +217,43 @@ export async function runSupervisedPremiumAnalysis(sourceCode, contractName, opt
 async function runParallelAIAnalysis(sourceCode, contractName, options) {
   const models = [
     {
-      id: 'deepseek/deepseek-r1:free',
+      id: 'deepseek/deepseek-r1-0528:free',
       name: 'DeepSeek R1',
       specialty: 'advanced-reasoning',
       focus: 'Complex vulnerability patterns and edge cases',
       prompt: getSpecializedPrompt('advanced-reasoning')
     },
     {
-      id: 'deepseek/deepseek-chat:free', 
+      id: 'deepseek/deepseek-chat-v3-0324:free', 
       name: 'DeepSeek Chat',
       specialty: 'security-focused',
       focus: 'Classical security vulnerabilities',
       prompt: getSpecializedPrompt('security')
     },
     {
-      id: 'qwen/qwen-2.5-72b-instruct:free',
-      name: 'Qwen 2.5 72B',
+      id: 'google/gemini-2.0-flash-001',
+      name: 'Gemini 2.0 Flash',
       specialty: 'large-context-analysis',
       focus: 'Comprehensive code pattern analysis',
       prompt: getSpecializedPrompt('comprehensive')
     },
     {
-      id: 'meta-llama/llama-3.1-70b-instruct:free',
-      name: 'Llama 3.1 70B',
+      id: 'meta-llama/llama-3.3-70b-instruct',
+      name: 'Llama 3.3 70B',
       specialty: 'defi-security',
       focus: 'DeFi-specific attack vectors',
       prompt: getSpecializedPrompt('defi')
     },
     {
-      id: 'microsoft/wizardlm-2-8x22b:free',
-      name: 'WizardLM 2',
+      id: 'mistralai/mistral-nemo',
+      name: 'Mistral Nemo',
       specialty: 'gas-optimization',
       focus: 'Gas efficiency and optimization',
       prompt: getSpecializedPrompt('gas')
     },
     {
-      id: 'anthropic/claude-3-haiku:beta',
-      name: 'Claude 3 Haiku',
+      id: 'openai/gpt-4o-mini',
+      name: 'GPT-4o Mini',
       specialty: 'code-quality',
       focus: 'Code quality and best practices',
       prompt: getSpecializedPrompt('quality')
@@ -189,8 +262,13 @@ async function runParallelAIAnalysis(sourceCode, contractName, options) {
   
   console.log(`🤖 Running parallel analysis with ${models.length} specialized AI models...`);
   
-  // Execute all models in parallel with timeout protection
+  // Execute all models in parallel with timeout protection and rate limiting
   const analysisPromises = models.map(async (model, index) => {
+    // Add delay for free models to avoid rate limits
+    if (model.id.includes(':free') && index > 0) {
+      await new Promise(resolve => setTimeout(resolve, 3000 * Math.ceil(index / 2))); // Stagger free models
+    }
+    
     const timeout = new Promise((_, reject) => 
       setTimeout(() => reject(new Error('Model timeout')), 180000) // 3 minutes per model
     );
@@ -252,8 +330,101 @@ async function runParallelAIAnalysis(sourceCode, contractName, options) {
   
   console.log(`📊 Parallel analysis completed: ${successfulResults.length}/${models.length} models successful`);
   
-  if (successfulResults.length < 2) {
-    throw new Error(`Insufficient AI model responses: ${successfulResults.length}/${models.length} succeeded`);
+  if (successfulResults.length > 0) {
+    console.log(`✅ Successful models: ${successfulResults.map(r => r.modelName).join(', ')}`);
+  }
+  
+  if (failedResults.length > 0) {
+    console.log(`❌ Failed models: ${failedResults.map(r => `${r.modelName}: ${r.error}`).join(', ')}`);
+  }
+  
+  if (successfulResults.length < 1) {
+    // Check if it's an API key issue
+    const apiKeyError = failedResults.some(r => r.error && (r.error.includes('API key') || r.error.includes('401')));
+    const rateLimitError = failedResults.some(r => r.error && (r.error.includes('429') || r.error.includes('Too Many Requests')));
+    
+    if (apiKeyError) {
+      console.warn('🔑 API key issues detected. Falling back to static analysis.');
+      // Return fallback results instead of throwing
+      const { runFallbackSecurityAnalysis, createFallbackReport } = await import('../security/fallbackAnalysis.js');
+      const fallbackAnalysis = await runFallbackSecurityAnalysis(sourceCode, contractName);
+      const fallbackReport = createFallbackReport(fallbackAnalysis, contractName);
+      
+      return {
+        allResults: processedResults,
+        successfulResults: [],
+        failedResults: failedResults,
+        successfulModels: [],
+        successRate: 0,
+        totalModels: models.length,
+        fallbackUsed: true,
+        fallbackReport: fallbackReport
+      };
+    }
+    
+    if (rateLimitError) {
+      console.warn('⏱️ Rate limit issues detected. Reducing model count and retrying...');
+      // Try with just one model
+      const singleModel = models[models.length - 1]; // Use GPT-4o-mini which is most reliable
+      try {
+        const result = await callOpenRouterAPIServer({
+          model: singleModel.id,
+          prompt: singleModel.prompt,
+          sourceCode: sourceCode,
+          contractName: contractName,
+          maxTokens: 4000,
+          temperature: 0.1
+        });
+        
+        return {
+          allResults: [{
+            modelId: singleModel.id,
+            modelName: singleModel.name,
+            specialty: singleModel.specialty,
+            result: result,
+            success: true,
+            analysisTime: Date.now(),
+            confidence: calculateResultConfidence(result)
+          }],
+          successfulResults: [{
+            modelId: singleModel.id,
+            modelName: singleModel.name,
+            specialty: singleModel.specialty,
+            result: result,
+            success: true,
+            analysisTime: Date.now(),
+            confidence: calculateResultConfidence(result)
+          }],
+          failedResults: failedResults,
+          successfulModels: [{
+            name: singleModel.name,
+            specialty: singleModel.specialty,
+            confidence: calculateResultConfidence(result)
+          }],
+          successRate: 1 / models.length,
+          totalModels: models.length
+        };
+      } catch (singleModelError) {
+        console.error('❌ Single model retry also failed:', singleModelError);
+        // Fall back to static analysis
+        const { runFallbackSecurityAnalysis, createFallbackReport } = await import('../security/fallbackAnalysis.js');
+        const fallbackAnalysis = await runFallbackSecurityAnalysis(sourceCode, contractName);
+        const fallbackReport = createFallbackReport(fallbackAnalysis, contractName);
+        
+        return {
+          allResults: processedResults,
+          successfulResults: [],
+          failedResults: failedResults,
+          successfulModels: [],
+          successRate: 0,
+          totalModels: models.length,
+          fallbackUsed: true,
+          fallbackReport: fallbackReport
+        };
+      }
+    }
+    
+    throw new Error(`Insufficient AI model responses: ${successfulResults.length}/${models.length} succeeded. Common issues: API key invalid, rate limits, or network errors.`);
   }
   
   return {
@@ -277,7 +448,7 @@ async function runSupervisorReview(parallelResults, sourceCode, contractName) {
   console.log('🧠 Starting supervisor review and conflict resolution...');
   
   const supervisorPrompt = createSupervisorPrompt(parallelResults, contractName);
-  const supervisorModel = 'deepseek/deepseek-r1:free'; // Most reliable for supervision
+  const supervisorModel = 'openai/gpt-4o-mini'; // GPT-4o-mini for supervision
   
   try {
     const supervisorResult = await callOpenRouterAPIServer({
@@ -451,7 +622,7 @@ Return JSON with quality findings:
   try {
     const [gasResult, qualityResult] = await Promise.all([
       callOpenRouterAPIServer({
-        model: 'microsoft/wizardlm-2-8x22b:free',
+        model: 'mistralai/mistral-nemo',
         prompt: gasPrompt,
         sourceCode: sourceCode,
         contractName: contractName,
@@ -459,7 +630,7 @@ Return JSON with quality findings:
         temperature: 0.1
       }),
       callOpenRouterAPIServer({
-        model: 'anthropic/claude-3-haiku:beta',
+        model: 'openai/gpt-4o-mini',
         prompt: qualityPrompt,
         sourceCode: sourceCode,
         contractName: contractName,

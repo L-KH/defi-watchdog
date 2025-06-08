@@ -81,8 +81,8 @@ export async function runComprehensiveAudit(sourceCode, contractName, options = 
       },
       
       // AI Analysis Details
-      aiModelsUsed: analysisResult.report.analysisMetadata.aiModelsUsed,
-      supervisorVerification: analysisResult.report.analysisMetadata.supervisorVerification,
+      aiModelsUsed: analysisResult.report.analysisMetadata?.aiModelsUsed || analysisResult.metadata?.aiModelsUsed || [],
+      supervisorVerification: analysisResult.report.analysisMetadata?.supervisorVerification || analysisResult.metadata?.supervisorVerification || 'UNKNOWN',
       
       // Professional Reports
       reports: reportResult.reports,
@@ -111,7 +111,14 @@ export async function runComprehensiveAudit(sourceCode, contractName, options = 
     
     console.log(`✅ Comprehensive audit completed in ${Math.round(comprehensiveResult.auditMetadata.totalTime / 1000)}s`);
     console.log(`📊 Generated ${comprehensiveResult.auditMetadata.reportsGenerated} professional reports`);
-    console.log(`🤖 Used ${comprehensiveResult.aiModelsUsed.length} AI models with ${comprehensiveResult.supervisorVerification} verification`);
+    
+    // Safe access to aiModelsUsed with fallback
+    const aiModelsCount = comprehensiveResult.aiModelsUsed && Array.isArray(comprehensiveResult.aiModelsUsed) 
+      ? comprehensiveResult.aiModelsUsed.length 
+      : 0;
+    const verification = comprehensiveResult.supervisorVerification || 'UNKNOWN';
+    
+    console.log(`🤖 Used ${aiModelsCount} AI models with ${verification} verification`);
     
     return comprehensiveResult;
     
