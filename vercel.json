@@ -1,21 +1,22 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
-    }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  },
   "functions": {
-    "src/pages/api/**/*.js": {
-      "maxDuration": 300
+    "src/pages/api/ai-analysis.js": {
+      "maxDuration": 10
+    },
+    "src/pages/api/audit/comprehensive.js": {
+      "maxDuration": 10
     }
   },
-  "regions": ["iad1"],
-  "installCommand": "yarn install --frozen-lockfile",
-  "buildCommand": "yarn build",
+  "env": {
+    "NEXT_PUBLIC_USE_CLIENT_AI": "true"
+  },
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_USE_CLIENT_AI": "true",
+      "NODE_ENV": "production"
+    }
+  },
+  "framework": "nextjs",
+  "buildCommand": "npm run build",
   "outputDirectory": ".next"
 }

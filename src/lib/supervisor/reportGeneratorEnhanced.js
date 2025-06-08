@@ -9,8 +9,7 @@ import {
 // Export the original functions we don't need to modify
 export { 
   generateRiskAssessmentMatrix, 
-  generateReportStatistics,
-  generateProfessionalReports 
+  generateReportStatistics
 } from './reportGenerator.js';
 
 // Enhanced Executive Report

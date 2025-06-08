@@ -985,11 +985,14 @@ export default function EnhancedScanResults({
                     <div className="flex items-start justify-between mb-2">
                       <h4 className="font-semibold text-blue-900">{optimization.title}</h4>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        optimization.impact === 'HIGH' ? 'bg-red-100 text-red-700' :
-                        optimization.impact === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700' :
+                        (optimization.impact === 'HIGH' || (typeof optimization.impact === 'object' && optimization.impact?.level === 'HIGH')) ? 'bg-red-100 text-red-700' :
+                        (optimization.impact === 'MEDIUM' || (typeof optimization.impact === 'object' && optimization.impact?.level === 'MEDIUM')) ? 'bg-yellow-100 text-yellow-700' :
                         'bg-blue-100 text-blue-700'
                       }`}>
-                        {optimization.impact} Impact
+                        {typeof optimization.impact === 'object' 
+                          ? optimization.impact.level || optimization.impact.severity || 'MEDIUM'
+                          : optimization.impact || 'MEDIUM'
+                        } Impact
                       </span>
                     </div>
                     <p className="text-sm text-blue-800 mb-3">{optimization.description}</p>
@@ -997,7 +1000,12 @@ export default function EnhancedScanResults({
                     {optimization.gasSavings && (
                       <div className="text-sm">
                         <span className="font-medium text-blue-900">Estimated Savings: </span>
-                        <span className="text-blue-700">{optimization.gasSavings}</span>
+                        <span className="text-blue-700">
+                          {typeof optimization.gasSavings === 'object' 
+                            ? `${optimization.gasSavings.gasReduction || optimization.gasSavings.percentage || 'Unknown'} - ${optimization.gasSavings.description || 'Gas savings possible'}`
+                            : optimization.gasSavings
+                          }
+                        </span>
                       </div>
                     )}
                     

@@ -1,5 +1,5 @@
 // SMART AI Analysis API - Full Capability with Client-Side Fallback
-import { analyzeWithAIServerSideSmart } from '../../lib/aiAnalysisServerSmart';
+import { analyzeWithAIServerSide } from '../../lib/aiAnalysisServer';
 import { clientSideAnalyzer } from '../../lib/clientSideAI';
 
 // Static timeout configuration for Next.js compatibility
@@ -38,7 +38,7 @@ export default async function handler(req, res) {
         setTimeout(() => reject(new Error('Analysis timeout - switching to client-side')), maxTime);
       });
 
-      const analysisPromise = analyzeWithAIServerSideSmart(sourceCode, contractName, {
+      const analysisPromise = analyzeWithAIServerSide(sourceCode, contractName, {
         ...options,
         isVercelEnvironment,
         maxProcessingTime: maxTime - 1000
