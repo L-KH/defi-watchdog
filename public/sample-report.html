@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Multi-AI Security Analysis - NFT</title>
+    
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        line-height: 1.6;
+        color: #2d3748;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+      
+      .premium-report {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        border-radius: 20px;
+        overflow: hidden;
+        margin-top: 20px;
+        margin-bottom: 20px;
+      }
+      
+      .report-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 40px;
+        text-align: center;
+      }
+      
+      .header-content h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+        font-weight: 700;
+      }
+      
+      .premium-badge {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 8px 20px;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        margin-bottom: 20px;
+        backdrop-filter: blur(10px);
+      }
+      
+      .contract-info h2 {
+        font-size: 2rem;
+        margin-bottom: 15px;
+        font-weight: 600;
+      }
+      
+      .meta-info {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        flex-wrap: wrap;
+        font-size: 1rem;
+        opacity: 0.9;
+      }
+      
+      .executive-dashboard {
+        padding: 40px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+      }
+      
+      .executive-dashboard h2 {
+        font-size: 1.8rem;
+        margin-bottom: 30px;
+        color: #2d3748;
+        text-align: center;
+      }
+      
+      .dashboard-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 30px;
+      }
+      
+      .score-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e2e8f0;
+        transition: transform 0.2s ease;
+      }
+      
+      .score-card:hover {
+        transform: translateY(-2px);
+      }
+      
+      .score-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+      
+      .score-header .icon {
+        font-size: 1.5rem;
+        margin-right: 10px;
+      }
+      
+      .score-header .label {
+        font-size: 0.9rem;
+        color: #64748b;
+        font-weight: 500;
+      }
+      
+      .score-value {
+        font-size: 3rem;
+        font-weight: 700;
+        color: #3b82f6;
+        margin-bottom: 15px;
+      }
+      
+      .score-bar {
+        height: 8px;
+        background: #e2e8f0;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 10px;
+      }
+      
+      .score-fill {
+        height: 100%;
+        background: #3b82f6;
+        transition: width 0.5s ease;
+      }
+      
+      .gas-fill { background: #f59e0b; }
+      .quality-fill { background: #10b981; }
+      .overall-fill { background: #8b5cf6; }
+      
+      .score-findings {
+        font-size: 0.9rem;
+        color: #64748b;
+      }
+      
+      .ai-specialists {
+        padding: 40px;
+      }
+      
+      .ai-specialists h2 {
+        font-size: 1.8rem;
+        margin-bottom: 30px;
+        color: #2d3748;
+        text-align: center;
+      }
+      
+      .specialists-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+      }
+      
+      .specialist-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+      }
+      
+      .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      
+      .specialist-icon {
+        font-size: 2rem;
+        margin-right: 15px;
+      }
+      
+      .specialist-info h3 {
+        font-size: 1.2rem;
+        margin-bottom: 5px;
+      }
+      
+      .specialist-info p {
+        font-size: 0.9rem;
+        opacity: 0.9;
+      }
+      
+      .confidence-badge {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+      }
+      
+      .card-content {
+        padding: 20px;
+      }
+      
+      .specialist-stats {
+        display: flex;
+        justify-content: space-around;
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #e2e8f0;
+      }
+      
+      .stat {
+        text-align: center;
+      }
+      
+      .stat-value {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #3b82f6;
+        margin-bottom: 5px;
+      }
+      
+      .stat-label {
+        font-size: 0.8rem;
+        color: #64748b;
+      }
+      
+      .finding-preview {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        margin-bottom: 8px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+      }
+      
+      .finding-preview.critical { background: #fef2f2; border-left: 3px solid #dc2626; }
+      .finding-preview.high { background: #fff7ed; border-left: 3px solid #ea580c; }
+      .finding-preview.medium { background: #fefce8; border-left: 3px solid #ca8a04; }
+      .finding-preview.low { background: #f0f9ff; border-left: 3px solid #0284c7; }
+      
+      .finding-severity {
+        font-size: 0.7rem;
+        padding: 2px 6px;
+        border-radius: 10px;
+        background: rgba(0, 0, 0, 0.1);
+        font-weight: 600;
+      }
+      
+      .more-findings {
+        text-align: center;
+        font-size: 0.8rem;
+        color: #64748b;
+        font-style: italic;
+      }
+      
+      .security-findings, .gas-optimizations, .code-quality, .executive-summary {
+        padding: 40px;
+        border-bottom: 1px solid #e2e8f0;
+      }
+      
+      .security-findings h2, .gas-optimizations h2, .code-quality h2, .executive-summary h2 {
+        font-size: 1.8rem;
+        margin-bottom: 30px;
+        color: #2d3748;
+      }
+      
+      .no-findings, .no-optimizations, .no-issues {
+        text-align: center;
+        padding: 60px 20px;
+        background: #f8fafc;
+        border-radius: 15px;
+        border: 2px dashed #cbd5e1;
+      }
+      
+      .celebration-icon, .no-findings .icon, .no-optimizations .icon, .no-issues .icon {
+        font-size: 4rem;
+        margin-bottom: 20px;
+      }
+      
+      .no-findings h3, .no-optimizations h3, .no-issues h3 {
+        font-size: 1.5rem;
+        color: #059669;
+        margin-bottom: 10px;
+      }
+      
+      .severity-group {
+        margin-bottom: 30px;
+      }
+      
+      .severity-group h3 {
+        font-size: 1.3rem;
+        margin-bottom: 20px;
+        padding: 10px 0;
+        border-bottom: 2px solid #e2e8f0;
+      }
+      
+      .finding-item, .optimization-item, .quality-item {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+      
+      .finding-header, .optimization-header, .quality-header {
+        background: #f8fafc;
+        padding: 20px;
+        border-bottom: 1px solid #e2e8f0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      
+      .finding-header h4, .optimization-header h4, .quality-header h4 {
+        font-size: 1.1rem;
+        color: #2d3748;
+      }
+      
+      .severity-badge {
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+      
+      .severity-badge.critical { background: #dc2626; color: white; }
+      .severity-badge.high { background: #ea580c; color: white; }
+      .severity-badge.medium { background: #ca8a04; color: white; }
+      .severity-badge.low { background: #0284c7; color: white; }
+      .severity-badge.info { background: #64748b; color: white; }
+      
+      .savings-badge, .impact-badge {
+        background: #10b981;
+        color: white;
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      
+      .impact-badge.high { background: #dc2626; }
+      .impact-badge.medium { background: #ca8a04; }
+      .impact-badge.low { background: #0284c7; }
+      
+      .finding-content, .optimization-content, .quality-content {
+        padding: 20px;
+      }
+      
+      .finding-content p, .optimization-content p, .quality-content p {
+        margin-bottom: 12px;
+        line-height: 1.6;
+      }
+      
+      .ai-model {
+        font-size: 0.85rem;
+        color: #6366f1;
+        font-style: italic;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #e2e8f0;
+      }
+      
+      .summary-content {
+        background: #f8fafc;
+        padding: 30px;
+        border-radius: 15px;
+        border: 1px solid #e2e8f0;
+      }
+      
+      .summary-content p {
+        font-size: 1.1rem;
+        line-height: 1.7;
+        margin-bottom: 25px;
+        color: #374151;
+      }
+      
+      .recommendations h3 {
+        font-size: 1.2rem;
+        color: #2d3748;
+        margin-bottom: 15px;
+      }
+      
+      .recommendations ul {
+        list-style: none;
+        margin-left: 0;
+      }
+      
+      .recommendations li {
+        padding: 12px 0;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 1rem;
+        line-height: 1.6;
+      }
+      
+      .recommendations li:last-child {
+        border-bottom: none;
+      }
+      
+      .report-footer {
+        background: #2d3748;
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+      
+      .footer-content p {
+        margin-bottom: 8px;
+        opacity: 0.9;
+      }
+      
+      @media (max-width: 768px) {
+        .premium-report {
+          margin: 10px;
+          border-radius: 10px;
+        }
+        
+        .report-header {
+          padding: 25px 20px;
+        }
+        
+        .header-content h1 {
+          font-size: 2rem;
+        }
+        
+        .contract-info h2 {
+          font-size: 1.5rem;
+        }
+        
+        .meta-info {
+          flex-direction: column;
+          gap: 10px;
+        }
+        
+        .dashboard-grid {
+          grid-template-columns: 1fr;
+          gap: 20px;
+        }
+        
+        .specialists-grid {
+          grid-template-columns: 1fr;
+        }
+        
+        .specialist-stats {
+          flex-direction: column;
+          gap: 15px;
+        }
+        
+        .finding-header, .optimization-header, .quality-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+        }
+      }
+    </style>
+  
+</head>
+<body>
+    <div class="premium-report">
+        <!-- Header Section -->
+        <header class="report-header">
+            <div class="header-content">
+                <div class="logo-section">
+                    <h1>🛡️ DeFi Watchdog Premium Analysis</h1>
+                    <div class="premium-badge">Multi-AI Security Analysis</div>
+                </div>
+                <div class="contract-info">
+                    <h2>NFT</h2>
+                    <div class="meta-info">
+                        <span>📅 08/06/2025</span>
+                        <span>🤖 6 AI Specialists</span>
+                        <span>📊 Risk Level: Low Risk</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Executive Dashboard -->
+        <section class="executive-dashboard">
+            <h2>📊 Executive Dashboard</h2>
+            <div class="dashboard-grid">
+                <div class="score-card security">
+                    <div class="score-header">
+                        <span class="icon">🛡️</span>
+                        <span class="label">Security Score</span>
+                    </div>
+                    <div class="score-value">90</div>
+                    <div class="score-bar">
+                        <div class="score-fill" style="width: 90%"></div>
+                    </div>
+                    <div class="score-findings">10 findings</div>
+                </div>
+                
+                <div class="score-card gas">
+                    <div class="score-header">
+                        <span class="icon">⚡</span>
+                        <span class="label">Gas Optimization</span>
+                    </div>
+                    <div class="score-value">85</div>
+                    <div class="score-bar">
+                        <div class="score-fill gas-fill" style="width: 85%"></div>
+                    </div>
+                    <div class="score-findings">9 optimizations</div>
+                </div>
+                
+                <div class="score-card quality">
+                    <div class="score-header">
+                        <span class="icon">✨</span>
+                        <span class="label">Code Quality</span>
+                    </div>
+                    <div class="score-value">89</div>
+                    <div class="score-bar">
+                        <div class="score-fill quality-fill" style="width: 89%"></div>
+                    </div>
+                    <div class="score-findings">10 issues</div>
+                </div>
+                
+                <div class="score-card overall">
+                    <div class="score-header">
+                        <span class="icon">🎯</span>
+                        <span class="label">Overall Score</span>
+                    </div>
+                    <div class="score-value">88</div>
+                    <div class="score-bar">
+                        <div class="score-fill overall-fill" style="width: 88%"></div>
+                    </div>
+                    <div class="score-findings">Low Risk</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Specialists Section -->
+        <section class="ai-specialists">
+            <h2>🤖 AI Specialist Reports</h2>
+            <div class="specialists-grid">
+                
+    <div class="specialist-card">
+      <div class="card-header">
+        <span class="specialist-icon">🤖</span>
+        <div class="specialist-info">
+          <h3>Llama 3.2</h3>
+          <p>Security Analysis</p>
+        </div>
+        <div class="confidence-badge">90%</div>
+      </div>
+      <div class="card-content">
+        <div class="specialist-stats">
+          <div class="stat">
+            <span class="stat-value">3</span>
+            <span class="stat-label">Findings</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">✅</span>
+            <span class="stat-label">Status</span>
+          </div>
+        </div>
+        <div class="specialist-findings">
+          
+            <div class="finding-preview low">
+              <span class="finding-title">Reentrancy Vulnerability</span>
+              <span class="finding-severity">LOW</span>
+            </div>
+          
+            <div class="finding-preview medium">
+              <span class="finding-title">Gas Optimization Opportunity</span>
+              <span class="finding-severity">MEDIUM</span>
+            </div>
+          
+            <div class="finding-preview low">
+              <span class="finding-title">Code Quality Issue</span>
+              <span class="finding-severity">LOW</span>
+            </div>
+          
+          
+        </div>
+      </div>
+    </div>
+  
+    <div class="specialist-card">
+      <div class="card-header">
+        <span class="specialist-icon">🤖</span>
+        <div class="specialist-info">
+          <h3>DeepSeek Chat</h3>
+          <p>Security Analysis</p>
+        </div>
+        <div class="confidence-badge">93%</div>
+      </div>
+      <div class="card-content">
+        <div class="specialist-stats">
+          <div class="stat">
+            <span class="stat-value">1</span>
+            <span class="stat-label">Findings</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">✅</span>
+            <span class="stat-label">Status</span>
+          </div>
+        </div>
+        <div class="specialist-findings">
+          
+            <div class="finding-preview low">
+              <span class="finding-title">Lack of Detailed Comments</span>
+              <span class="finding-severity">LOW</span>
+            </div>
+          
+          
+        </div>
+      </div>
+    </div>
+  
+    <div class="specialist-card">
+      <div class="card-header">
+        <span class="specialist-icon">🤖</span>
+        <div class="specialist-info">
+          <h3>Qwen 2.5</h3>
+          <p>Security Analysis</p>
+        </div>
+        <div class="confidence-badge">93%</div>
+      </div>
+      <div class="card-content">
+        <div class="specialist-stats">
+          <div class="stat">
+            <span class="stat-value">2</span>
+            <span class="stat-label">Findings</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">✅</span>
+            <span class="stat-label">Status</span>
+          </div>
+        </div>
+        <div class="specialist-findings">
+          
+            <div class="finding-preview medium">
+              <span class="finding-title">Potential Denial of Service (DoS) via Reentrancy</span>
+              <span class="finding-severity">MEDIUM</span>
+            </div>
+          
+            <div class="finding-preview low">
+              <span class="finding-title">Unnecessary Complexity in `sqrt` Function</span>
+              <span class="finding-severity">LOW</span>
+            </div>
+          
+          
+        </div>
+      </div>
+    </div>
+  
+    <div class="specialist-card">
+      <div class="card-header">
+        <span class="specialist-icon">🤖</span>
+        <div class="specialist-info">
+          <h3>WizardLM 2</h3>
+          <p>Security Analysis</p>
+        </div>
+        <div class="confidence-badge">93%</div>
+      </div>
+      <div class="card-content">
+        <div class="specialist-stats">
+          <div class="stat">
+            <span class="stat-value">1</span>
+            <span class="stat-label">Findings</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">✅</span>
+            <span class="stat-label">Status</span>
+          </div>
+        </div>
+        <div class="specialist-findings">
+          
+            <div class="finding-preview low">
+              <span class="finding-title">Use of `unchecked` blocks</span>
+              <span class="finding-severity">LOW</span>
+            </div>
+          
+          
+        </div>
+      </div>
+    </div>
+  
+    <div class="specialist-card">
+      <div class="card-header">
+        <span class="specialist-icon">🤖</span>
+        <div class="specialist-info">
+          <h3>Gemini 2.0 Flash</h3>
+          <p>Security Analysis</p>
+        </div>
+        <div class="confidence-badge">94%</div>
+      </div>
+      <div class="card-content">
+        <div class="specialist-stats">
+          <div class="stat">
+            <span class="stat-value">0</span>
+            <span class="stat-label">Findings</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">✅</span>
+            <span class="stat-label">Status</span>
+          </div>
+        </div>
+        <div class="specialist-findings">
+          
+          
+        </div>
+      </div>
+    </div>
+  
+    <div class="specialist-card">
+      <div class="card-header">
+        <span class="specialist-icon">🤖</span>
+        <div class="specialist-info">
+          <h3>Mistral Small</h3>
+          <p>Security Analysis</p>
+        </div>
+        <div class="confidence-badge">86%</div>
+      </div>
+      <div class="card-content">
+        <div class="specialist-stats">
+          <div class="stat">
+            <span class="stat-value">3</span>
+            <span class="stat-label">Findings</span>
+          </div>
+          <div class="stat">
+            <span class="stat-value">✅</span>
+            <span class="stat-label">Status</span>
+          </div>
+        </div>
+        <div class="specialist-findings">
+          
+            <div class="finding-preview medium">
+              <span class="finding-title">Potential Overflow in MulDiv Function</span>
+              <span class="finding-severity">MEDIUM</span>
+            </div>
+          
+            <div class="finding-preview low">
+              <span class="finding-title">Lack of Event Logging</span>
+              <span class="finding-severity">LOW</span>
+            </div>
+          
+            <div class="finding-preview low">
+              <span class="finding-title">Lack of Documentation</span>
+              <span class="finding-severity">LOW</span>
+            </div>
+          
+          
+        </div>
+      </div>
+    </div>
+  
+            </div>
+        </section>
+
+        <!-- Security Findings Section -->
+        <section class="security-findings">
+            <h2>🛡️ Security Analysis (10 findings)</h2>
+            
+      <div class="severity-group medium">
+        <h3>MEDIUM Severity (3)</h3>
+        <div class="findings-list">
+          
+            <div class="finding-item">
+              <div class="finding-header">
+                <h4>Gas Optimization Opportunity</h4>
+                <span class="severity-badge medium">MEDIUM</span>
+              </div>
+              <div class="finding-content">
+                <p><strong>Description:</strong> The contract uses the `unchecked` keyword for some calculations, which can lead to gas inefficiencies. Consider using `safe` functions instead.</p>
+                <p><strong>Location:</strong> unchecked keyword</p>
+                <p><strong>Impact:</strong> Potential gas savings</p>
+                <p><strong>Recommendation:</strong> Replace `unchecked` keyword with `safe` functions</p>
+                
+              </div>
+            </div>
+          
+            <div class="finding-item">
+              <div class="finding-header">
+                <h4>Potential Denial of Service (DoS) via Reentrancy</h4>
+                <span class="severity-badge medium">MEDIUM</span>
+              </div>
+              <div class="finding-content">
+                <p><strong>Description:</strong> The `mulDiv` function could potentially be exploited through reentrancy attacks if it is called within a context where reentrancy is possible. Although this library is not directly used in the main contract, any contract that imports this library and uses the `mulDiv` function should ensure proper reentrancy protection.</p>
+                <p><strong>Location:</strong> File: @openzeppelin/contracts/utils/math/Math.sol, Function: mulDiv</p>
+                <p><strong>Impact:</strong> An attacker could exploit this to drain funds or cause unexpected behavior.</p>
+                <p><strong>Recommendation:</strong> Implement reentrancy guards in any contract that uses this library and calls functions like `mulDiv`.</p>
+                
+              </div>
+            </div>
+          
+            <div class="finding-item">
+              <div class="finding-header">
+                <h4>Potential Overflow in MulDiv Function</h4>
+                <span class="severity-badge medium">MEDIUM</span>
+              </div>
+              <div class="finding-content">
+                <p><strong>Description:</strong> The `mulDiv` function uses unchecked arithmetic operations which can lead to overflows if not handled properly. While the function is designed to handle large numbers, there is still a risk of overflow if the inputs are not within expected ranges.</p>
+                <p><strong>Location:</strong> Math.sol:120-180</p>
+                <p><strong>Impact:</strong> Potential contract failure or incorrect results.</p>
+                <p><strong>Recommendation:</strong> Add proper overflow checks or use SafeMath for arithmetic operations.</p>
+                
+              </div>
+            </div>
+          
+        </div>
+      </div>
+    
+      <div class="severity-group low">
+        <h3>LOW Severity (7)</h3>
+        <div class="findings-list">
+          
+            <div class="finding-item">
+              <div class="finding-header">
+                <h4>Reentrancy Vulnerability</h4>
+                <span class="severity-badge low">LOW</span>
+              </div>
+              <div class="finding-content">
+                <p><strong>Description:</strong> The contract uses the `Math.max` and `Math.min` functions, which are not explicitly marked as reentrancy-safe. This could lead to reentrancy attacks if the contract is used in a way that allows for reentrancy.</p>
+                <p><strong>Location:</strong> Math.max and Math.min functions</p>
+                <p><strong>Impact:</strong> Potential loss of funds</p>
+                <p><strong>Recommendation:</strong> Use reentrancy-safe functions, such as `Math.max` and `Math.min` from OpenZeppelin's SafeMath library</p>
+                
+              </div>
+            </div>
+          
+            <div class="finding-item">
+              <div class="finding-header">
+                <h4>Code Quality Issue</h4>
+                <span class="severity-badge low">LOW</span>
+              </div>
+              <div class="finding-content">
+                <p><strong>Description:</strong> The contract uses a lot of magic numbers (e.g., 128, 64, 32, etc.). Consider defining constants for these values to improve code readability and maintainability.</p>
+                <p><strong>Location:</strong> Magic numbers</p>
+                <p><strong>Impact:</strong> Potential code readability issues</p>
+                <p><strong>Recommendation:</strong> Define constants for magic numbers</p>
+                
+              </div>
+            </div>
+          
+            <div class="finding-item">
+              <div class="finding-header">
+                <h4>Lack of Detailed Comments</h4>
+                <span class="severity-badge low">LOW</span>
+              </div>
+              <div class="finding-content">
+                <p><strong>Description:</strong> While the code is generally well-written, some functions lack detailed comments explaining their purpose and logic, which could make it harder for developers to understand and maintain the code.</p>
+                <p><strong>Location:</strong> Throughout the contract</p>
+                <p><strong>Impact:</strong> Reduced readability and maintainability.</p>
+                <p><strong>Recommendation:</strong> Add detailed comments for each function, especially for complex mathematical operations.</p>
+                
+              </div>
+            </div>
+          
+            <div class="finding-item">
+              <div class="finding-header">
+                <h4>Unnecessary Complexity in `sqrt` Function</h4>
+                <span class="severity-badge low">LOW</span>
+              </div>
+              <div class="finding-content">
+                <p><strong>Description:</strong> The `sqrt` function uses a series of iterations to approximate the square root, which is computationally expensive. While this approach ensures accuracy, it may not be necessary for all use cases.</p>
+                <p><strong>Location:</strong> File: @openzeppelin/contracts/utils/math/Math.sol, Function: sqrt</p>
+                <p><strong>Impact:</strong> Increased gas usage without significant benefit.</p>
+                <p><strong>Recommendation:</strong> Consider simplifying the `sqrt` function for less critical applications or use a more efficient algorithm if precision is not a concern.</p>
+                
+              </div>
+            </div>
+          
+            <div class="finding-item">
+              <div class="finding-header">
+                <h4>Use of `unchecked` blocks</h4>
+                <span class="severity-badge low">LOW</span>
+              </div>
+              <div class="finding-content">
+                <p><strong>Description:</strong> The code uses `unchecked` blocks to avoid overflow checks where the developers are certain that overflows cannot occur. While this can save gas, it may also introduce risks if the assumptions are incorrect. However, the OpenZeppelin team has a strong reputation for careful code review, and the use of `unchecked` seems justified in the context of this library.</p>
+                <p><strong>Location:</strong> Various functions within the library</p>
+                <p><strong>Impact:</strong> Potential for unchecked arithmetic errors if assumptions about variable bounds are incorrect.</p>
+                <p><strong>Recommendation:</strong> Ensure that the conditions for safe arithmetic operations are always met before using `unchecked` blocks. Regularly review and test these assumptions.</p>
+                
+              </div>
+            </div>
+          
+            <div class="finding-item">
+              <div class="finding-header">
+                <h4>Lack of Event Logging</h4>
+                <span class="severity-badge low">LOW</span>
+              </div>
+              <div class="finding-content">
+                <p><strong>Description:</strong> The contract does not emit any events, which makes it difficult to track the state changes and debug issues. Event logging is crucial for monitoring and auditing purposes.</p>
+                <p><strong>Location:</strong> Entire contract</p>
+                <p><strong>Impact:</strong> Difficulty in tracking state changes and debugging.</p>
+                <p><strong>Recommendation:</strong> Add appropriate event logging for critical operations.</p>
+                
+              </div>
+            </div>
+          
+            <div class="finding-item">
+              <div class="finding-header">
+                <h4>Lack of Documentation</h4>
+                <span class="severity-badge low">LOW</span>
+              </div>
+              <div class="finding-content">
+                <p><strong>Description:</strong> Some functions lack detailed documentation, making it harder for developers to understand their purpose and usage. Proper documentation is essential for maintainability and usability.</p>
+                <p><strong>Location:</strong> Entire contract</p>
+                <p><strong>Impact:</strong> Reduced maintainability and usability.</p>
+                <p><strong>Recommendation:</strong> Add detailed comments and documentation for all public and internal functions.</p>
+                
+              </div>
+            </div>
+          
+        </div>
+      </div>
+    
+        </section>
+
+        <!-- Gas Optimization Section -->
+        <section class="gas-optimizations">
+            <h2>⚡ Gas Optimization Opportunities (9 optimizations)</h2>
+            
+    <div class="optimizations-list">
+      
+        <div class="optimization-item">
+          <div class="optimization-header">
+            <h4>Replace `unchecked` keyword with `safe` functions</h4>
+            <span class="savings-badge">Unknown</span>
+          </div>
+          <div class="optimization-content">
+            <p><strong>Description:</strong> Replace `unchecked` keyword with `safe` functions to improve gas efficiency.</p>
+            <p><strong>Location:</strong> unchecked keyword</p>
+            <p><strong>Implementation:</strong> Easy</p>
+            <p><strong>Difficulty:</strong> MEDIUM</p>
+            
+          </div>
+        </div>
+      
+        <div class="optimization-item">
+          <div class="optimization-header">
+            <h4>Optimize Assembly Code</h4>
+            <span class="savings-badge">Minor</span>
+          </div>
+          <div class="optimization-content">
+            <p><strong>Description:</strong> The contract uses inline assembly for certain operations, which is already gas-efficient. However, further optimization could be achieved by minimizing the number of operations within the assembly blocks.</p>
+            <p><strong>Location:</strong> mulDiv function</p>
+            <p><strong>Implementation:</strong> [object Object]</p>
+            <p><strong>Difficulty:</strong> MEDIUM</p>
+            
+          </div>
+        </div>
+      
+        <div class="optimization-item">
+          <div class="optimization-header">
+            <h4>Optimize `sqrt` Function</h4>
+            <span class="savings-badge">200-300 gas per call</span>
+          </div>
+          <div class="optimization-content">
+            <p><strong>Description:</strong> The current implementation of the `sqrt` function uses multiple iterations to achieve high precision. Simplifying this function can reduce gas costs.</p>
+            <p><strong>Location:</strong> File: @openzeppelin/contracts/utils/math/Math.sol, Function: sqrt</p>
+            <p><strong>Implementation:</strong> [object Object]</p>
+            <p><strong>Difficulty:</strong> MEDIUM</p>
+            
+          </div>
+        </div>
+      
+        <div class="optimization-item">
+          <div class="optimization-header">
+            <h4>Optimize repeated arithmetic operations</h4>
+            <span class="savings-badge">Variable, depends on usage patterns</span>
+          </div>
+          <div class="optimization-content">
+            <p><strong>Description:</strong> Some functions, such as `mulDiv`, perform repeated arithmetic operations that could be optimized by storing intermediate results in local variables.</p>
+            <p><strong>Location:</strong> `mulDiv` function</p>
+            <p><strong>Implementation:</strong> [object Object]</p>
+            <p><strong>Difficulty:</strong> MEDIUM</p>
+            
+          </div>
+        </div>
+      
+        <div class="optimization-item">
+          <div class="optimization-header">
+            <h4>Reduce the number of iterations in `log2`</h4>
+            <span class="savings-badge">Up to 10% in the `log2` function</span>
+          </div>
+          <div class="optimization-content">
+            <p><strong>Description:</strong> The `log2` function uses a series of conditional checks to determine the base-2 logarithm. This could be optimized by using bitwise operations to reduce the number of iterations.</p>
+            <p><strong>Location:</strong> `log2` function</p>
+            <p><strong>Implementation:</strong> [object Object]</p>
+            <p><strong>Difficulty:</strong> MEDIUM</p>
+            
+          </div>
+        </div>
+      
+        <div class="optimization-item">
+          <div class="optimization-header">
+            <h4>Use unchecked arithmetic where overflow is impossible</h4>
+            <span class="savings-badge">Minor</span>
+          </div>
+          <div class="optimization-content">
+            <p><strong>Description:</strong> In several functions, arithmetic operations are performed where overflow is impossible due to prior checks or the nature of the calculation. Using `unchecked` blocks around these operations can save gas.</p>
+            <p><strong>Location:</strong> Math.sol</p>
+            <p><strong>Implementation:</strong> [object Object]</p>
+            <p><strong>Difficulty:</strong> EASY</p>
+            
+          </div>
+        </div>
+      
+        <div class="optimization-item">
+          <div class="optimization-header">
+            <h4>Cache array length in loops</h4>
+            <span class="savings-badge">Minor</span>
+          </div>
+          <div class="optimization-content">
+            <p><strong>Description:</strong> If the length of an array is used multiple times within a loop, caching the length in a local variable can save gas.</p>
+            <p><strong>Location:</strong> Math.sol</p>
+            <p><strong>Implementation:</strong> [object Object]</p>
+            <p><strong>Difficulty:</strong> EASY</p>
+            
+          </div>
+        </div>
+      
+        <div class="optimization-item">
+          <div class="optimization-header">
+            <h4>Avoid Unchecked Arithmetic</h4>
+            <span class="savings-badge">Minimal</span>
+          </div>
+          <div class="optimization-content">
+            <p><strong>Description:</strong> Using unchecked arithmetic can lead to unexpected behavior and potential overflows. While it is used to optimize gas usage, it should be done cautiously.</p>
+            <p><strong>Location:</strong> Math.sol:120-180</p>
+            <p><strong>Implementation:</strong> [object Object]</p>
+            <p><strong>Difficulty:</strong> MEDIUM</p>
+            
+          </div>
+        </div>
+      
+        <div class="optimization-item">
+          <div class="optimization-header">
+            <h4>Optimize Loop Conditions</h4>
+            <span class="savings-badge">Low</span>
+          </div>
+          <div class="optimization-content">
+            <p><strong>Description:</strong> The `log2` function can be optimized by reducing the number of loop iterations. This can be achieved by using bit shifting operations more efficiently.</p>
+            <p><strong>Location:</strong> Math.sol:200-220</p>
+            <p><strong>Implementation:</strong> [object Object]</p>
+            <p><strong>Difficulty:</strong> EASY</p>
+            
+          </div>
+        </div>
+      
+    </div>
+  
+        </section>
+
+        <!-- Code Quality Section -->
+        <section class="code-quality">
+            <h2>✨ Code Quality Assessment (10 issues)</h2>
+            
+    <div class="quality-issues-list">
+      
+        <div class="quality-item">
+          <div class="quality-header">
+            <h4>Define constants for magic numbers</h4>
+            <span class="impact-badge potential code readability issues">Potential code readability issues</span>
+          </div>
+          <div class="quality-content">
+            <p><strong>Category:</strong> Code Quality</p>
+            <p><strong>Description:</strong> Define constants for magic numbers to improve code readability and maintainability.</p>
+            <p><strong>Recommendation:</strong> Define constants for magic numbers</p>
+            
+          </div>
+        </div>
+      
+        <div class="quality-item">
+          <div class="quality-header">
+            <h4>Inconsistent Use of Unchecked Blocks</h4>
+            <span class="impact-badge low">LOW</span>
+          </div>
+          <div class="quality-content">
+            <p><strong>Category:</strong> Quality</p>
+            <p><strong>Description:</strong> The contract uses `unchecked` blocks in some places but not others. While this is not a security issue, consistent use of `unchecked` blocks where safe can improve code readability and gas efficiency.</p>
+            <p><strong>Recommendation:</strong> Review and apply `unchecked` blocks consistently where overflow/underflow is not possible.</p>
+            
+          </div>
+        </div>
+      
+        <div class="quality-item">
+          <div class="quality-header">
+            <h4>Lack of Error Messages in Require Statements</h4>
+            <span class="impact-badge low">LOW</span>
+          </div>
+          <div class="quality-content">
+            <p><strong>Category:</strong> Quality</p>
+            <p><strong>Description:</strong> Some `require` statements do not include error messages, which can make debugging more difficult.</p>
+            <p><strong>Recommendation:</strong> Add descriptive error messages to all `require` statements.</p>
+            
+          </div>
+        </div>
+      
+        <div class="quality-item">
+          <div class="quality-header">
+            <h4>Redundant Checks in `log2` Function</h4>
+            <span class="impact-badge low">LOW</span>
+          </div>
+          <div class="quality-content">
+            <p><strong>Category:</strong> Quality</p>
+            <p><strong>Description:</strong> The `log2` function contains redundant checks for shifting bits, which can be optimized.</p>
+            <p><strong>Recommendation:</strong> Refactor the `log2` function to remove redundant checks and improve readability.</p>
+            
+          </div>
+        </div>
+      
+        <div class="quality-item">
+          <div class="quality-header">
+            <h4>Lack of NatSpec comments for some internal functions</h4>
+            <span class="impact-badge medium">MEDIUM</span>
+          </div>
+          <div class="quality-content">
+            <p><strong>Category:</strong> Documentation</p>
+            <p><strong>Description:</strong> Some internal functions could benefit from additional NatSpec comments to improve developer understanding and maintainability.</p>
+            <p><strong>Recommendation:</strong> Add NatSpec comments to all internal functions, explaining their purpose, parameters, return values, and any edge cases.</p>
+            
+          </div>
+        </div>
+      
+        <div class="quality-item">
+          <div class="quality-header">
+            <h4>Consistent use of `unchecked` blocks</h4>
+            <span class="impact-badge low">LOW</span>
+          </div>
+          <div class="quality-content">
+            <p><strong>Category:</strong> Best Practices</p>
+            <p><strong>Description:</strong> The codebase should consistently use `unchecked` blocks where appropriate to avoid unnecessary overflow checks and improve gas efficiency.</p>
+            <p><strong>Recommendation:</strong> Review the codebase to ensure that `unchecked` blocks are used consistently and appropriately.</p>
+            
+          </div>
+        </div>
+      
+        <div class="quality-item">
+          <div class="quality-header">
+            <h4>Consider adding NatSpec documentation</h4>
+            <span class="impact-badge low">LOW</span>
+          </div>
+          <div class="quality-content">
+            <p><strong>Category:</strong> Documentation</p>
+            <p><strong>Description:</strong> While the code is generally well-documented, adding NatSpec-style documentation (///) can improve readability and integration with documentation generators.</p>
+            <p><strong>Recommendation:</strong> Add NatSpec comments to all public and external functions, and consider adding them to internal functions as well.</p>
+            
+          </div>
+        </div>
+      
+        <div class="quality-item">
+          <div class="quality-header">
+            <h4>Naming consistency</h4>
+            <span class="impact-badge low">LOW</span>
+          </div>
+          <div class="quality-content">
+            <p><strong>Category:</strong> Readability</p>
+            <p><strong>Description:</strong> Ensure consistent naming conventions throughout the library. While the current naming is generally good, a review for consistency can improve readability.</p>
+            <p><strong>Recommendation:</strong> Review all function and variable names for consistency with established conventions.</p>
+            
+          </div>
+        </div>
+      
+        <div class="quality-item">
+          <div class="quality-header">
+            <h4>Inconsistent Commenting</h4>
+            <span class="impact-badge low">LOW</span>
+          </div>
+          <div class="quality-content">
+            <p><strong>Category:</strong> Readability</p>
+            <p><strong>Description:</strong> Some functions have detailed comments while others do not. Consistent commenting is important for code readability and maintainability.</p>
+            <p><strong>Recommendation:</strong> Ensure consistent commenting across all functions.</p>
+            
+          </div>
+        </div>
+      
+        <div class="quality-item">
+          <div class="quality-header">
+            <h4>Lack of Unit Tests</h4>
+            <span class="impact-badge medium">MEDIUM</span>
+          </div>
+          <div class="quality-content">
+            <p><strong>Category:</strong> Testing</p>
+            <p><strong>Description:</strong> The contract lacks unit tests, which are essential for verifying the correctness of the mathematical operations. Unit tests should be added to cover all edge cases.</p>
+            <p><strong>Recommendation:</strong> Add comprehensive unit tests for all functions.</p>
+            
+          </div>
+        </div>
+      
+    </div>
+  
+        </section>
+
+        <!-- Executive Summary -->
+        <section class="executive-summary">
+            <h2>📋 Executive Summary</h2>
+            <div class="summary-content">
+                <p>Multi-AI analysis completed with 6 models. Found 10 security findings.</p>
+                <div class="recommendations">
+                    <h3>Key Recommendations:</h3>
+                    <ul>
+                        <li><strong>OPTIMIZATION:</strong> Implement 9 gas optimizations to reduce costs</li><li><strong>QUALITY:</strong> Improve 10 code quality issues for better maintainability</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="report-footer">
+            <div class="footer-content">
+                <p>Generated by DeFi Watchdog Premium Multi-AI Analysis</p>
+                <p>Report generated on 08/06/2025 23:38:46</p>
+                <p>🤖 Powered by 6 specialized AI security models</p>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>

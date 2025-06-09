@@ -1,673 +1,487 @@
-import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import Link from 'next/link';
 import Layout from '../components/layout/Layout';
 
-export default function AIAgents() {
-  const [activeAgent, setActiveAgent] = useState('zerepyAgent');
-  
-  // Agent data
-  const agents = {
-    zerepyAgent: {
-      name: 'ZerePy',
-      description: 'Specialized agent for Sonic blockchain analysis with deep understanding of ZK-rollup vulnerabilities and gas optimization.',
-      capabilities: [
-        'Sonic blockchain-specific optimizations',
-        'ZK-rollup security analysis',
-        'Gas usage optimization recommendations',
-        'Sonic ecosystem integration checks'
-      ],
-      modelBase: 'Custom ensemble of GPT-4, Deepseek-Coder, and Claude',
-      accuracy: 94,
-      icon: '🤖',
-      color: '#10b981',
-      bgColor: '#ecfdf5'
-    },
-    openaiAgent: {
-      name: 'OpenAI Agent',
-      description: 'Powered by GPT-4, this agent specializes in identifying common vulnerabilities, logical flaws, and best practices in smart contracts.',
-      capabilities: [
-        'Common vulnerability detection',
-        'Static code analysis',
-        'Access control verification',
-        'Contract pattern recognition'
-      ],
-      modelBase: 'GPT-4 Turbo',
-      accuracy: 92,
-      icon: '🧠',
-      color: '#f59e0b',
-      bgColor: '#fffbeb'
-    },
-    deepseekAgent: {
-      name: 'DeepSeek Agent',
-      description: 'Code-focused agent specialized in deep analysis of smart contract implementations and optimizations.',
-      capabilities: [
-        'Code flow analysis',
-        'Resource usage optimization',
-        'Complex vulnerability patterns',
-        'Contract architecture assessment'
-      ],
-      modelBase: 'DeepSeek Coder 33B',
-      accuracy: 89,
-      icon: '🔍',
-      color: '#8b5cf6',
-      bgColor: '#f5f3ff'
-    },
-    mistralAgent: {
-      name: 'Mistral Agent',
-      description: 'Focuses on economic implications and game-theoretic vulnerabilities in DeFi contracts.',
-      capabilities: [
-        'Economic attack vector analysis',
-        'Validator incentive checks',
-        'MEV vulnerability detection',
-        'Price oracle manipulation detection'
-      ],
-      modelBase: 'Mistral Large',
-      accuracy: 87,
-      icon: '🔮',
-      color: '#3b82f6',
-      bgColor: '#eff6ff'
-    },
-    ensembleAgent: {
-      name: 'AI Ensemble',
-      description: 'Meta-agent that coordinates inputs from all other agents, mediates disagreements, and produces consensus reports.',
-      capabilities: [
-        'Cross-model validation',
-        'False-positive reduction',
-        'Confidence scoring',
-        'Final recommendation synthesis'
-      ],
-      modelBase: 'Custom orchestration layer',
-      accuracy: 97,
-      icon: '🌐',
-      color: '#6366f1',
-      bgColor: '#eef2ff'
-    }
-  };
-  
-  // Recommendations for improvements from each agent
-  const improvements = [
+export default function AIModels() {
+  const aiModels = [
     {
-      agent: 'zerepyAgent',
-      title: 'Gas Optimization in Loops',
-      description: 'Replace storage variables in loops with memory variables to save gas',
-      code: `// Original code (inefficient)
-for (uint i = 0; i < users.length; i++) {
-    balances[users[i]] += rewards[i];
-}
-
-// Optimized code
-mapping(address => uint) storage _balances = balances;
-for (uint i = 0; i < users.length; i++) {
-    _balances[users[i]] += rewards[i];
-}`
+      name: "Google Gemma 2B",
+      provider: "Google",
+      type: "General Security Analysis",
+      tier: "Free & Premium",
+      icon: "🧠",
+      confidence: "92%",
+      specialties: [
+        "General vulnerability detection",
+        "Pattern recognition",
+        "Security best practices",
+        "Code structure analysis"
+      ],
+      strengths: [
+        "Fast analysis speed",
+        "High accuracy for common vulnerabilities",
+        "Excellent false positive filtering",
+        "Robust baseline security checks"
+      ],
+      description: "Our primary general-purpose security AI model, optimized for comprehensive vulnerability detection with balanced speed and accuracy."
     },
     {
-      agent: 'openaiAgent',
-      title: 'Reentrancy Prevention',
-      description: 'Add ReentrancyGuard or implement checks-effects-interactions pattern',
-      code: `// Vulnerable code
-function withdraw(uint256 amount) external {
-    require(balances[msg.sender] >= amount, "Insufficient balance");
-    (bool success, ) = msg.sender.call{value: amount}("");
-    require(success, "Transfer failed");
-    balances[msg.sender] -= amount; // State update after external call
-}
-
-// Secured code
-function withdraw(uint256 amount) external nonReentrant {
-    require(balances[msg.sender] >= amount, "Insufficient balance");
-    balances[msg.sender] -= amount; // State update before external call
-    (bool success, ) = msg.sender.call{value: amount}("");
-    require(success, "Transfer failed");
-}`
+      name: "DeepSeek Chat V3",
+      provider: "DeepSeek",
+      type: "Logic & Economic Analysis",
+      tier: "Premium",
+      icon: "🔍",
+      confidence: "94%",
+      specialties: [
+        "Complex logic vulnerabilities",
+        "Economic attack vectors",
+        "Business logic flaws",
+        "Advanced reasoning"
+      ],
+      strengths: [
+        "Deep logical reasoning",
+        "Economic vulnerability detection",
+        "Complex attack vector analysis",
+        "DeFi protocol understanding"
+      ],
+      description: "Specialized in complex reasoning and economic attacks, this model excels at identifying sophisticated vulnerabilities that require deep logical analysis."
     },
     {
-      agent: 'deepseekAgent',
-      title: 'Precision Loss in Division',
-      description: 'Multiplication before division to prevent precision loss',
-      code: `// Original code with precision loss
-uint256 percentage = amount / total * 100;
-
-// Fixed code
-uint256 percentage = amount * 100 / total;`
+      name: "DeepSeek R1",
+      provider: "DeepSeek",
+      type: "Code Quality & Optimization",
+      tier: "Premium",
+      icon: "✨",
+      confidence: "91%",
+      specialties: [
+        "Code quality assessment",
+        "Gas optimization",
+        "Best practices review",
+        "Performance analysis"
+      ],
+      strengths: [
+        "Gas efficiency analysis",
+        "Code quality metrics",
+        "Optimization recommendations",
+        "Best practices enforcement"
+      ],
+      description: "Focuses on code quality, gas optimization, and development best practices to help you build efficient and maintainable smart contracts."
     },
     {
-      agent: 'mistralAgent',
-      title: 'Oracle Price Manipulation',
-      description: 'Use time-weighted average prices instead of spot prices',
-      code: `// Vulnerable code
-function getPrice(address token) public view returns (uint256) {
-    return oracle.getSpotPrice(token);
-}
-
-// Secured code
-function getPrice(address token) public view returns (uint256) {
-    return oracle.getTWAP(token, 30 minutes);
-}`
+      name: "Google Gemini 2.0 Flash",
+      provider: "Google",
+      type: "DeFi & Gas Optimization",
+      tier: "Premium",
+      icon: "⚡",
+      confidence: "95%",
+      specialties: [
+        "DeFi protocol security",
+        "Gas optimization",
+        "MEV analysis",
+        "Protocol-specific risks"
+      ],
+      strengths: [
+        "DeFi protocol expertise",
+        "Flash loan attack detection",
+        "MEV vulnerability analysis",
+        "Protocol interaction risks"
+      ],
+      description: "Our fastest and most DeFi-focused model, specialized in protocol security, gas optimization, and MEV-related vulnerabilities."
+    },
+    {
+      name: "Llama 3.2",
+      provider: "Meta",
+      type: "Advanced Security Analysis",
+      tier: "Premium",
+      icon: "🦙",
+      confidence: "93%",
+      specialties: [
+        "Advanced vulnerability patterns",
+        "Zero-day detection",
+        "Complex attack chains",
+        "Novel exploit patterns"
+      ],
+      strengths: [
+        "Novel vulnerability detection",
+        "Advanced pattern recognition",
+        "Complex attack analysis",
+        "Research-grade precision"
+      ],
+      description: "Advanced AI model capable of detecting novel vulnerability patterns and complex attack chains that traditional tools might miss."
+    },
+    {
+      name: "WizardLM 2",
+      provider: "Microsoft",
+      type: "Comprehensive Analysis",
+      tier: "Premium",
+      icon: "🧙‍♂️",
+      confidence: "93%",
+      specialties: [
+        "Multi-faceted analysis",
+        "Cross-function vulnerabilities",
+        "System-wide security",
+        "Holistic assessment"
+      ],
+      strengths: [
+        "Comprehensive coverage",
+        "System-wide analysis",
+        "Cross-function vulnerabilities",
+        "Holistic security assessment"
+      ],
+      description: "Provides comprehensive, wizard-like analysis covering multiple security aspects and system-wide vulnerabilities in a single pass."
     }
   ];
-  
-  // Simulate AI agent consensus
-  const aiConsensus = {
-    issueType: 'Reentrancy Vulnerability',
-    agentOpinions: [
-      {
-        agent: 'ZerePy',
-        opinion: 'Critical vulnerability detected in withdraw() function. External call is made before state update, allowing for potential reentrancy attack.',
-        confidence: 98,
-        agentIcon: '🤖',
-        agentColor: '#10b981'
-      },
-      {
-        agent: 'OpenAI',
-        opinion: 'High risk reentrancy detected, recommend implementing checks-effects-interactions pattern or using OpenZeppelin ReentrancyGuard.',
-        confidence: 95,
-        agentIcon: '🧠',
-        agentColor: '#f59e0b'
-      },
-      {
-        agent: 'DeepSeek',
-        opinion: 'Confirmed reentrancy vulnerability. Multiple withdrawal paths could drain contract funds.',
-        confidence: 92,
-        agentIcon: '🔍',
-        agentColor: '#8b5cf6'
-      },
-      {
-        agent: 'Mistral',
-        opinion: 'Possible reentrancy, though unlikely due to gas limitations. Still recommend fixing using standard pattern.',
-        confidence: 84,
-        agentIcon: '🔮',
-        agentColor: '#3b82f6'
-      }
-    ],
-    consensusView: 'All AI agents agree this is a Critical vulnerability requiring immediate remediation. Implementing the checks-effects-interactions pattern is the recommended fix. The vulnerability has a potential to allow attackers to drain contract funds by recursively calling withdraw() function before the balance is updated.',
-    confidenceScore: 96
-  };
-  
+
+  const analysisProcess = [
+    {
+      step: "1",
+      title: "Parallel Processing",
+      description: "All AI models analyze your contract simultaneously for maximum speed and coverage",
+      icon: "⚡"
+    },
+    {
+      step: "2", 
+      title: "Specialized Analysis",
+      description: "Each model focuses on its area of expertise to provide deep, specialized insights",
+      icon: "🎯"
+    },
+    {
+      step: "3",
+      title: "Cross-Validation",
+      description: "Results are cross-validated between models to reduce false positives and confirm findings",
+      icon: "✅"
+    },
+    {
+      step: "4",
+      title: "Unified Reporting",
+      description: "All findings are consolidated into a comprehensive, actionable security report",
+      icon: "📊"
+    }
+  ];
+
+  const comparisonData = [
+    {
+      category: "Speed",
+      traditional: "Minutes to hours",
+      aiPowered: "1-4 minutes",
+      improvement: "10-50x faster"
+    },
+    {
+      category: "Coverage",
+      traditional: "Rule-based patterns",
+      aiPowered: "AI reasoning + patterns",
+      improvement: "30% more findings"
+    },
+    {
+      category: "False Positives",
+      traditional: "High (20-40%)",
+      aiPowered: "Low (5-10%)",
+      improvement: "70% reduction"
+    },
+    {
+      category: "Novel Vulnerabilities",
+      traditional: "Limited detection",
+      aiPowered: "Advanced reasoning",
+      improvement: "Detects unknown patterns"
+    }
+  ];
+
   return (
     <Layout>
       <Head>
-        <title>AI Agents - DeFi Watchdog</title>
+        <title>AI Models - DeFi Watchdog</title>
+        <meta name="description" content="Learn about the 6 specialized AI models powering DeFi Watchdog's comprehensive smart contract security analysis." />
       </Head>
-      
-      <div style={{ maxWidth: '1200px', margin: '2rem auto', padding: '1rem' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-          AI Agents
-        </h1>
-        
-        <p style={{ fontSize: '1.125rem', color: '#4b5563', marginBottom: '2rem' }}>
-          DeFi Watchdog employs multiple specialized AI agents to analyze smart contracts from different perspectives, 
-          ensuring comprehensive security analysis and more accurate vulnerability detection.
-        </p>
-        
-        {/* AI Agents Grid */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', 
-          gap: '1rem',
-          marginBottom: '2rem'
-        }}>
-          {Object.entries(agents).map(([agentKey, agent]) => (
-            <div 
-              key={agentKey}
-              onClick={() => setActiveAgent(agentKey)}
-              style={{ 
-                backgroundColor: activeAgent === agentKey ? agent.bgColor : 'white',
-                border: `1px solid ${activeAgent === agentKey ? agent.color : '#e5e7eb'}`,
-                borderRadius: '0.5rem',
-                padding: '1.25rem',
-                cursor: 'pointer',
-                boxShadow: activeAgent === agentKey ? `0 2px 8px rgba(0, 0, 0, 0.05)` : 'none',
-                transition: 'all 0.2s ease-in-out'
-              }}
-            >
-              <div style={{ 
-                fontSize: '2rem', 
-                marginBottom: '0.5rem',
-                color: agent.color
-              }}>
-                {agent.icon}
+
+      <div className="bg-gradient-to-b from-gray-50 to-white">
+        {/* Hero Section */}
+        <section className="pt-32 pb-20">
+          <div className="container mx-auto px-6">
+            <div className="max-w-4xl mx-auto text-center">
+              <div className="inline-flex items-center py-2 px-4 rounded-full bg-indigo-100 text-indigo-700 text-sm font-medium mb-6">
+                <span className="mr-2">🤖</span>
+                AI Models
               </div>
-              <h3 style={{ 
-                fontSize: '1.125rem', 
-                fontWeight: 'bold', 
-                marginBottom: '0.25rem',
-                color: activeAgent === agentKey ? agent.color : '#111827'
-              }}>
-                {agent.name}
-              </h3>
-              <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                Accuracy: {agent.accuracy}%
-              </div>
-            </div>
-          ))}
-        </div>
-        
-        {/* Selected Agent Details */}
-        {activeAgent && agents[activeAgent] && (
-          <div style={{ 
-            backgroundColor: agents[activeAgent].bgColor,
-            borderRadius: '0.5rem',
-            padding: '1.5rem',
-            marginBottom: '2rem',
-            border: `1px solid ${agents[activeAgent].color}`,
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1rem' }}>
-              <div style={{ 
-                fontSize: '2.5rem', 
-                marginRight: '1rem',
-                color: agents[activeAgent].color
-              }}>
-                {agents[activeAgent].icon}
-              </div>
-              <div>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: agents[activeAgent].color }}>
-                  {agents[activeAgent].name}
-                </h2>
-                <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                  Based on {agents[activeAgent].modelBase}
-                </div>
-              </div>
-            </div>
-            
-            <p style={{ fontSize: '1rem', color: '#4b5563', marginBottom: '1.5rem' }}>
-              {agents[activeAgent].description}
-            </p>
-            
-            <div style={{ marginBottom: '1rem' }}>
-              <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                Capabilities
-              </h3>
-              <ul style={{ paddingLeft: '1.5rem' }}>
-                {agents[activeAgent].capabilities.map((capability, index) => (
-                  <li key={index} style={{ marginBottom: '0.5rem', color: '#4b5563' }}>
-                    {capability}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            
-            {/* Code improvements from the active agent */}
-            {improvements.filter(improvement => improvement.agent === activeAgent).map((improvement, index) => (
-              <div key={index} style={{ marginTop: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                  Sample Improvement
-                </h3>
-                <div style={{ 
-                  backgroundColor: 'white', 
-                  borderRadius: '0.375rem', 
-                  padding: '1rem',
-                  border: '1px solid #e5e7eb'
-                }}>
-                  <div style={{ fontWeight: 'bold', marginBottom: '0.5rem', color: agents[activeAgent].color }}>
-                    {improvement.title}
-                  </div>
-                  <p style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.75rem' }}>
-                    {improvement.description}
-                  </p>
-                  <pre style={{ 
-                    backgroundColor: '#f3f4f6', 
-                    padding: '0.75rem', 
-                    borderRadius: '0.25rem',
-                    fontSize: '0.75rem',
-                    overflow: 'auto',
-                    whiteSpace: 'pre-wrap'
-                  }}>
-                    {improvement.code}
-                  </pre>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        
-        {/* AI Consensus Section */}
-        <div style={{ marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-            How AI Consensus Works
-          </h2>
-          
-          <p style={{ fontSize: '1rem', color: '#4b5563', marginBottom: '1.5rem' }}>
-            Multiple AI models analyze the contract independently and then collaborate to reach a consensus. 
-            This approach helps eliminate false positives and increases detection accuracy.
-          </p>
-          
-          <div style={{ 
-            backgroundColor: 'white', 
-            borderRadius: '0.5rem', 
-            padding: '1.5rem',
-            border: '1px solid #e5e7eb',
-            marginBottom: '1.5rem',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
-          }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-              {aiConsensus.issueType}
-            </h3>
-            
-            <div style={{ marginBottom: '1.5rem' }}>
-              {aiConsensus.agentOpinions.map((opinion, index) => (
-                <div key={index} style={{ 
-                  backgroundColor: '#f9fafb',
-                  borderRadius: '0.375rem',
-                  padding: '1rem',
-                  marginBottom: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'flex-start'
-                }}>
-                  <div style={{ 
-                    width: '2rem',
-                    height: '2rem',
-                    borderRadius: '50%',
-                    backgroundColor: opinion.agentColor + '20', // 20% opacity
-                    color: opinion.agentColor,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1.25rem',
-                    marginRight: '1rem',
-                    flexShrink: 0
-                  }}>
-                    {opinion.agentIcon}
-                  </div>
-                  <div style={{ flex: '1' }}>
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center',
-                      marginBottom: '0.25rem'
-                    }}>
-                      <div style={{ fontWeight: 'bold', color: opinion.agentColor }}>
-                        {opinion.agent}
-                      </div>
-                      <div style={{ 
-                        backgroundColor: opinion.agentColor + '20', // 20% opacity
-                        color: opinion.agentColor,
-                        borderRadius: '9999px',
-                        padding: '0.125rem 0.5rem',
-                        fontSize: '0.75rem',
-                        fontWeight: 'bold'
-                      }}>
-                        {opinion.confidence}% Confident
-                      </div>
-                    </div>
-                    <p style={{ fontSize: '0.875rem', color: '#4b5563', margin: 0 }}>
-                      {opinion.opinion}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            <div style={{ 
-              backgroundColor: '#eef2ff',
-              borderRadius: '0.375rem',
-              padding: '1rem',
-              border: '1px solid #c7d2fe'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  fontWeight: 'bold', 
-                  color: '#6366f1' 
-                }}>
-                  <span style={{ marginRight: '0.5rem' }}>🌐</span>
-                  AI Consensus
-                </div>
-                <div style={{ 
-                  backgroundColor: '#818cf8',
-                  color: 'white',
-                  borderRadius: '9999px',
-                  padding: '0.125rem 0.5rem',
-                  fontSize: '0.75rem',
-                  fontWeight: 'bold'
-                }}>
-                  {aiConsensus.confidenceScore}% Confidence
-                </div>
-              </div>
-              <p style={{ fontSize: '0.875rem', color: '#4b5563', margin: 0 }}>
-                {aiConsensus.consensusView}
+              
+              <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+                Meet Our AI
+                <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent"> Specialists</span>
+              </h1>
+              
+              <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                6 specialized AI models working in parallel to provide the most comprehensive 
+                smart contract security analysis available. Each model brings unique expertise 
+                to detect vulnerabilities others might miss.
               </p>
-            </div>
-          </div>
-          
-          {/* Process Flowchart */}
-          <div style={{ 
-            backgroundColor: 'white', 
-            borderRadius: '0.5rem', 
-            padding: '1.5rem',
-            border: '1px solid #e5e7eb',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
-          }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-              AI Agents Analysis Process
-            </h3>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem', padding: '1rem 0' }}>
-              {/* Step 1 */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ 
-                  width: '3rem', 
-                  height: '3rem', 
-                  borderRadius: '50%', 
-                  backgroundColor: '#f3f4f6',
-                  color: '#4b5563',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 'bold',
-                  fontSize: '1.25rem'
-                }}>
-                  1
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
+                <div className="bg-white rounded-xl p-4 shadow-lg">
+                  <div className="text-2xl font-bold text-indigo-600">6</div>
+                  <div className="text-sm text-gray-600">AI Models</div>
                 </div>
-                <div style={{ 
-                  flex: '1', 
-                  height: '4px', 
-                  backgroundColor: '#f3f4f6', 
-                  margin: '0 1rem' 
-                }}></div>
-                <div style={{ 
-                  backgroundColor: '#f3f4f6',
-                  borderRadius: '0.5rem',
-                  padding: '1rem',
-                  flex: '5'
-                }}>
-                  <h4 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                    Input Processing
-                  </h4>
-                  <p style={{ fontSize: '0.875rem', color: '#4b5563', margin: 0 }}>
-                    Smart contract code is parsed, normalized, and prepared for analysis by all AI agents simultaneously.
-                  </p>
+                <div className="bg-white rounded-xl p-4 shadow-lg">
+                  <div className="text-2xl font-bold text-purple-600">4</div>
+                  <div className="text-sm text-gray-600">Specializations</div>
+                </div>
+                <div className="bg-white rounded-xl p-4 shadow-lg">
+                  <div className="text-2xl font-bold text-blue-600">93%</div>
+                  <div className="text-sm text-gray-600">Avg Confidence</div>
+                </div>
+                <div className="bg-white rounded-xl p-4 shadow-lg">
+                  <div className="text-2xl font-bold text-green-600">1-4min</div>
+                  <div className="text-sm text-gray-600">Analysis Time</div>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* AI Models Grid */}
+        <section className="py-20 bg-white">
+          <div className="container mx-auto px-6">
+            <div className="max-w-7xl mx-auto">
+              <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
+                Our AI Security Specialists
+              </h2>
               
-              {/* Step 2 */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ 
-                  width: '3rem', 
-                  height: '3rem', 
-                  borderRadius: '50%', 
-                  backgroundColor: '#f3f4f6',
-                  color: '#4b5563',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 'bold',
-                  fontSize: '1.25rem'
-                }}>
-                  2
-                </div>
-                <div style={{ 
-                  flex: '1', 
-                  height: '4px', 
-                  backgroundColor: '#f3f4f6', 
-                  margin: '0 1rem' 
-                }}></div>
-                <div style={{ 
-                  backgroundColor: '#f3f4f6',
-                  borderRadius: '0.5rem',
-                  padding: '1rem',
-                  flex: '5',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.5rem'
-                }}>
-                  <h4 style={{ fontSize: '1rem', fontWeight: 'bold', margin: 0 }}>
-                    Parallel Analysis
-                  </h4>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    <div style={{ 
-                      backgroundColor: '#ecfdf5', 
-                      color: '#10b981',
-                      padding: '0.5rem 0.75rem',
-                      borderRadius: '0.25rem',
-                      fontSize: '0.875rem'
-                    }}>
-                      ZerePy Agent Analysis
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {aiModels.map((model, index) => (
+                  <div key={index} className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden hover:shadow-2xl transition-shadow duration-300">
+                    <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-3xl">{model.icon}</span>
+                        <span className="bg-white/20 px-3 py-1 rounded-full text-sm font-medium">
+                          {model.confidence}
+                        </span>
+                      </div>
+                      <h3 className="text-xl font-bold mb-2">{model.name}</h3>
+                      <p className="text-indigo-100 text-sm mb-2">{model.provider}</p>
+                      <p className="text-white/90 text-sm">{model.type}</p>
                     </div>
-                    <div style={{ 
-                      backgroundColor: '#fffbeb', 
-                      color: '#f59e0b',
-                      padding: '0.5rem 0.75rem',
-                      borderRadius: '0.25rem',
-                      fontSize: '0.875rem'
-                    }}>
-                      OpenAI Agent Analysis
-                    </div>
-                    <div style={{ 
-                      backgroundColor: '#f5f3ff', 
-                      color: '#8b5cf6',
-                      padding: '0.5rem 0.75rem',
-                      borderRadius: '0.25rem',
-                      fontSize: '0.875rem'
-                    }}>
-                      DeepSeek Agent Analysis
-                    </div>
-                    <div style={{ 
-                      backgroundColor: '#eff6ff', 
-                      color: '#3b82f6',
-                      padding: '0.5rem 0.75rem',
-                      borderRadius: '0.25rem',
-                      fontSize: '0.875rem'
-                    }}>
-                      Mistral Agent Analysis
+                    
+                    <div className="p-6">
+                      <div className="mb-4">
+                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                          model.tier === "Free & Premium" 
+                            ? "bg-green-100 text-green-800" 
+                            : "bg-purple-100 text-purple-800"
+                        }`}>
+                          {model.tier}
+                        </span>
+                      </div>
+                      
+                      <p className="text-gray-600 mb-6 text-sm leading-relaxed">
+                        {model.description}
+                      </p>
+                      
+                      <div className="mb-6">
+                        <h4 className="text-sm font-semibold text-gray-900 mb-3">Specialties:</h4>
+                        <div className="space-y-2">
+                          {model.specialties.map((specialty, idx) => (
+                            <div key={idx} className="flex items-center text-sm text-gray-600">
+                              <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full mr-2"></span>
+                              {specialty}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h4 className="text-sm font-semibold text-gray-900 mb-3">Key Strengths:</h4>
+                        <div className="flex flex-wrap gap-1">
+                          {model.strengths.slice(0, 2).map((strength, idx) => (
+                            <span key={idx} className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">
+                              {strength}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Analysis Process */}
+        <section className="py-20 bg-gray-50">
+          <div className="container mx-auto px-6">
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-16">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+                  How Our AI Analysis Works
+                </h2>
+                <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                  Our AI models work together in a sophisticated pipeline to provide 
+                  comprehensive, accurate, and fast security analysis.
+                </p>
               </div>
               
-              {/* Step 3 */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ 
-                  width: '3rem', 
-                  height: '3rem', 
-                  borderRadius: '50%', 
-                  backgroundColor: '#f3f4f6',
-                  color: '#4b5563',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 'bold',
-                  fontSize: '1.25rem'
-                }}>
-                  3
+              <div className="relative">
+                {/* Connecting line */}
+                <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-200 via-purple-200 to-blue-200 transform -translate-y-1/2"></div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                  {analysisProcess.map((process, index) => (
+                    <div key={index} className="relative">
+                      <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow text-center">
+                        <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg z-10">
+                          {process.step}
+                        </div>
+                        
+                        <div className="mt-6">
+                          <div className="text-3xl mb-4">{process.icon}</div>
+                          <h3 className="text-lg font-semibold text-gray-900 mb-3">{process.title}</h3>
+                          <p className="text-gray-600 text-sm">{process.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div style={{ 
-                  flex: '1', 
-                  height: '4px', 
-                  backgroundColor: '#f3f4f6', 
-                  margin: '0 1rem' 
-                }}></div>
-                <div style={{ 
-                  backgroundColor: '#f3f4f6',
-                  borderRadius: '0.5rem',
-                  padding: '1rem',
-                  flex: '5'
-                }}>
-                  <h4 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>
-                    Finding Reconciliation
-                  </h4>
-                  <p style={{ fontSize: '0.875rem', color: '#4b5563', margin: 0 }}>
-                    AI Ensemble compares findings across all agents, identifies agreements and disagreements, and weighs confidence scores.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* AI vs Traditional Comparison */}
+        <section className="py-20 bg-white">
+          <div className="container mx-auto px-6">
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-16">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+                  AI-Powered vs Traditional Analysis
+                </h2>
+                <p className="text-lg text-gray-600">
+                  See how our AI-powered approach compares to traditional static analysis tools.
+                </p>
+              </div>
+              
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white">
+                        <th className="px-6 py-4 text-left text-sm font-semibold">Metric</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold">Traditional Tools</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold">AI-Powered Analysis</th>
+                        <th className="px-6 py-4 text-left text-sm font-semibold">Improvement</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {comparisonData.map((row, index) => (
+                        <tr key={index} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                          <td className="px-6 py-4 font-semibold text-gray-900">{row.category}</td>
+                          <td className="px-6 py-4 text-gray-600">{row.traditional}</td>
+                          <td className="px-6 py-4 text-gray-600">{row.aiPowered}</td>
+                          <td className="px-6 py-4 font-semibold text-green-600">{row.improvement}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Technical Details */}
+        <section className="py-20 bg-gray-50">
+          <div className="container mx-auto px-6">
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-16">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+                  Technical Architecture
+                </h2>
+                <p className="text-lg text-gray-600">
+                  Built on cutting-edge AI infrastructure for maximum performance and reliability.
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="bg-white rounded-xl p-6 shadow-lg">
+                  <div className="text-3xl mb-4">🏗️</div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Parallel Processing</h3>
+                  <p className="text-gray-600 text-sm">
+                    All 6 AI models analyze your contract simultaneously, reducing analysis time 
+                    from hours to minutes while maintaining accuracy.
                   </p>
                 </div>
-              </div>
-              
-              {/* Step 4 */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ 
-                  width: '3rem', 
-                  height: '3rem', 
-                  borderRadius: '50%', 
-                  backgroundColor: '#f3f4f6',
-                  color: '#4b5563',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 'bold',
-                  fontSize: '1.25rem'
-                }}>
-                  4
+                
+                <div className="bg-white rounded-xl p-6 shadow-lg">
+                  <div className="text-3xl mb-4">🧮</div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Advanced Reasoning</h3>
+                  <p className="text-gray-600 text-sm">
+                    Large language models with billions of parameters understand code context 
+                    and logic to identify complex vulnerabilities.
+                  </p>
                 </div>
-                <div style={{ 
-                  flex: '1', 
-                  height: '4px', 
-                  backgroundColor: '#f3f4f6', 
-                  margin: '0 1rem' 
-                }}></div>
-                <div style={{ 
-                  backgroundColor: '#eef2ff',
-                  borderRadius: '0.5rem',
-                  padding: '1rem',
-                  flex: '5',
-                  borderLeft: '4px solid #6366f1'
-                }}>
-                  <h4 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem', color: '#6366f1' }}>
-                    Final Consensus Report
-                  </h4>
-                  <p style={{ fontSize: '0.875rem', color: '#4b5563', margin: 0 }}>
-                    The AI Ensemble generates a final consensus report with validated findings, fixes, and recommendations, along with confidence scores.
+                
+                <div className="bg-white rounded-xl p-6 shadow-lg">
+                  <div className="text-3xl mb-4">🎯</div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Specialized Training</h3>
+                  <p className="text-gray-600 text-sm">
+                    Each model is fine-tuned for specific security domains, from DeFi protocols 
+                    to gas optimization and code quality.
+                  </p>
+                </div>
+                
+                <div className="bg-white rounded-xl p-6 shadow-lg">
+                  <div className="text-3xl mb-4">🔄</div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Continuous Learning</h3>
+                  <p className="text-gray-600 text-sm">
+                    Models are regularly updated with new vulnerability patterns and 
+                    attack vectors discovered in the wild.
+                  </p>
+                </div>
+                
+                <div className="bg-white rounded-xl p-6 shadow-lg">
+                  <div className="text-3xl mb-4">🛡️</div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Consensus Validation</h3>
+                  <p className="text-gray-600 text-sm">
+                    Multiple models validate findings to reduce false positives and 
+                    increase confidence in results.
+                  </p>
+                </div>
+                
+                <div className="bg-white rounded-xl p-6 shadow-lg">
+                  <div className="text-3xl mb-4">📊</div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Real-time Monitoring</h3>
+                  <p className="text-gray-600 text-sm">
+                    Track analysis progress in real-time with detailed status updates 
+                    for each AI model's progress.
                   </p>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-        
+        </section>
+
         {/* CTA Section */}
-        <div style={{ 
-          textAlign: 'center', 
-          backgroundColor: '#f5f3ff', 
-          padding: '2rem', 
-          borderRadius: '0.5rem',
-          marginTop: '2rem',
-          border: '1px solid #ddd6fe'
-        }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem', color: '#8b5cf6' }}>
-            Analyze Your Smart Contract with our AI Agents
-          </h2>
-          <p style={{ fontSize: '1.125rem', color: '#6b7280', marginBottom: '1.5rem' }}>
-            Get comprehensive security analysis from multiple specialized AI models working together.
-          </p>
-          <Link 
-            href="/audit"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              padding: '0.75rem 1.5rem',
-              backgroundColor: '#8b5cf6',
-              color: 'white',
-              borderRadius: '0.375rem',
-              fontSize: '1rem',
-              fontWeight: '500',
-              textDecoration: 'none'
-            }}
-          >
-            Start Contract Analysis
-          </Link>
-        </div>
+        <section className="py-20 bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+          <div className="container mx-auto px-6 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+              Experience AI-Powered Security Analysis
+            </h2>
+            <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90">
+              Try our 6-model AI analysis platform and see how advanced AI can 
+              revolutionize your smart contract security workflow.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <a
+                href="/audit"
+                className="bg-white text-indigo-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+              >
+                Try Free AI Analysis
+              </a>
+              <a
+                href="/audit-pro"
+                className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-indigo-600 transition-colors"
+              >
+                Get Premium Analysis
+              </a>
+            </div>
+          </div>
+        </section>
       </div>
     </Layout>
   );

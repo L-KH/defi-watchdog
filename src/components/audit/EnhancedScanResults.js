@@ -8,6 +8,58 @@ import { generateExecutiveReport, generateTechnicalHtmlReport, generateStructure
 // Import audit-pro specific report generators
 import { generatePremiumMultiAIReport, generatePremiumMultiAIJsonReport, generatePremiumMultiAIPdfReport } from '../../lib/audit-pro-reports';
 
+// Helper function to safely get severity/impact as string for styling
+function getSafeImpactClass(item) {
+  // First try severity
+  if (item.severity && typeof item.severity === 'string') {
+    const severity = item.severity.toLowerCase();
+    if (severity === 'high') return 'bg-red-100 text-red-700';
+    if (severity === 'medium') return 'bg-yellow-100 text-yellow-700';
+    if (severity === 'low') return 'bg-blue-100 text-blue-700';
+  }
+  
+  // Then try impact - handle both string and object cases
+  if (item.impact) {
+    let impactLevel = '';
+    if (typeof item.impact === 'string') {
+      impactLevel = item.impact.toLowerCase();
+    } else if (typeof item.impact === 'object' && item.impact.level) {
+      impactLevel = item.impact.level.toLowerCase();
+    } else if (typeof item.impact === 'object' && item.impact.severity) {
+      impactLevel = item.impact.severity.toLowerCase();
+    }
+    
+    if (impactLevel === 'high') return 'bg-red-100 text-red-700';
+    if (impactLevel === 'medium') return 'bg-yellow-100 text-yellow-700';
+    if (impactLevel === 'low') return 'bg-blue-100 text-blue-700';
+  }
+  
+  // Default fallback
+  return 'bg-blue-100 text-blue-700';
+}
+
+// Helper function to safely get impact display text
+function getSafeImpactText(item) {
+  // First try severity
+  if (item.severity && typeof item.severity === 'string') {
+    return item.severity;
+  }
+  
+  // Then try impact - handle both string and object cases
+  if (item.impact) {
+    if (typeof item.impact === 'string') {
+      return item.impact;
+    } else if (typeof item.impact === 'object' && item.impact.level) {
+      return item.impact.level;
+    } else if (typeof item.impact === 'object' && item.impact.severity) {
+      return item.impact.severity;
+    }
+  }
+  
+  // Default fallback
+  return 'MEDIUM';
+}
+
 export default function EnhancedScanResults({ 
   toolsResult, 
   aiResult, 
@@ -984,15 +1036,8 @@ export default function EnhancedScanResults({
                   <div key={index} className="border border-blue-200 rounded-lg p-4 bg-blue-50">
                     <div className="flex items-start justify-between mb-2">
                       <h4 className="font-semibold text-blue-900">{optimization.title}</h4>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        (optimization.impact === 'HIGH' || (typeof optimization.impact === 'object' && optimization.impact?.level === 'HIGH')) ? 'bg-red-100 text-red-700' :
-                        (optimization.impact === 'MEDIUM' || (typeof optimization.impact === 'object' && optimization.impact?.level === 'MEDIUM')) ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-blue-100 text-blue-700'
-                      }`}>
-                        {typeof optimization.impact === 'object' 
-                          ? optimization.impact.level || optimization.impact.severity || 'MEDIUM'
-                          : optimization.impact || 'MEDIUM'
-                        } Impact
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSafeImpactClass(optimization)}`}>
+                        {getSafeImpactText(optimization)} Impact
                       </span>
                     </div>
                     <p className="text-sm text-blue-800 mb-3">{optimization.description}</p>

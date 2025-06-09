@@ -1,370 +1,280 @@
-import { useState, useEffect } from 'react';
 import Head from 'next/head';
-import Link from 'next/link';
 import Layout from '../components/layout/Layout';
-import FeaturedReportCard from '../components/FeaturedReportCard';
 
 export default function Reports() {
-  const [reports, setReports] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [filter, setFilter] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('date');
-  const [sortOrder, setSortOrder] = useState('desc');
-  
-  useEffect(() => {
-    let isMounted = true;
-    
-    async function fetchReports() {
-      if (!isMounted) return;
-      
-      setLoading(true);
-      setError(null);
-      
-      try {
-        // Fetch from both featured and recent endpoints
-        const [featuredResponse, recentResponse] = await Promise.all([
-          fetch('/api/reports/featured'),
-          fetch('/api/reports/recent')
-        ]);
-        
-        if (!featuredResponse.ok) {
-          throw new Error(`Error fetching featured reports: ${featuredResponse.statusText}`);
-        }
-        
-        if (!recentResponse.ok) {
-          throw new Error(`Error fetching recent reports: ${recentResponse.statusText}`);
-        }
-        
-        const featuredData = await featuredResponse.json();
-        const recentData = await recentResponse.json();
-        
-        // Merge and deduplicate reports by ID
-        const mergedReports = [...featuredData.reports, ...recentData.reports];
-        const uniqueReports = Array.from(
-          new Map(mergedReports.map(report => [report.id, report])).values()
-        );
-        
-        if (isMounted) {
-          setReports(uniqueReports);
-        }
-      } catch (err) {
-        console.error('Error fetching reports:', err);
-        if (isMounted) {
-          setError(err.message);
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
+  const sampleReports = [
+    {
+      title: "NFT Smart Contract Analysis",
+      description: "Comprehensive multi-AI security analysis of an NFT contract using 6 AI models",
+      type: "Premium Analysis",
+      findings: "10 security findings",
+      score: "88/100",
+      date: "June 8, 2025",
+      icon: "🎨",
+      reportUrl: "/sample-report.html",
+      highlights: [
+        "6 AI Specialists Analysis",
+        "Gas Optimization Opportunities", 
+        "Code Quality Assessment",
+        "Executive Summary"
+      ]
+    },
+    {
+      title: "DeFi Token Contract",
+      description: "Security analysis of a DeFi token with advanced tokenomics",
+      type: "Premium Analysis",
+      findings: "5 security findings",
+      score: "92/100",
+      date: "Coming Soon",
+      icon: "🪙",
+      reportUrl: "#",
+      highlights: [
+        "DeFi Protocol Analysis",
+        "Economic Attack Vectors",
+        "Liquidity Pool Security",
+        "Governance Analysis"
+      ]
+    },
+    {
+      title: "DAO Governance Contract", 
+      description: "Analysis of a decentralized autonomous organization governance system",
+      type: "Premium Analysis",
+      findings: "8 security findings",
+      score: "85/100",
+      date: "Coming Soon",
+      icon: "🏛️",
+      reportUrl: "#",
+      highlights: [
+        "Voting Mechanism Security",
+        "Proposal System Analysis", 
+        "Access Control Review",
+        "Economic Incentives"
+      ]
     }
-    
-    fetchReports();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-  
-  // Filter and sort reports
-  const filteredAndSortedReports = reports
-    // Apply network filter
-    .filter(report => {
-      if (filter === 'all') return true;
-      return report.network === filter;
-    })
-    // Apply search query filter
-    .filter(report => {
-      if (!searchQuery) return true;
-      
-      const query = searchQuery.toLowerCase();
-      return (
-        report.contractName?.toLowerCase().includes(query) ||
-        report.address?.toLowerCase().includes(query) ||
-        report.summary?.toLowerCase().includes(query)
-      );
-    })
-    // Apply sorting
-    .sort((a, b) => {
-      let comparison = 0;
-      
-      switch (sortBy) {
-        case 'date':
-          comparison = new Date(b.date) - new Date(a.date);
-          break;
-        case 'score':
-          comparison = b.score - a.score;
-          break;
-        case 'issues':
-          comparison = b.issues - a.issues;
-          break;
-        case 'name':
-          comparison = (a.contractName || '').localeCompare(b.contractName || '');
-          break;
-        default:
-          comparison = new Date(b.date) - new Date(a.date);
-      }
-      
-      return sortOrder === 'asc' ? -comparison : comparison;
-    });
-  
+  ];
+
+  const reportFeatures = [
+    {
+      icon: "🤖",
+      title: "Multi-AI Analysis",
+      description: "6+ specialized AI models analyze your contract in parallel"
+    },
+    {
+      icon: "📊",
+      title: "Executive Dashboard",
+      description: "High-level security scores and risk assessment for stakeholders"
+    },
+    {
+      icon: "🛡️",
+      title: "Security Findings",
+      description: "Detailed vulnerability analysis with severity ratings and recommendations"
+    },
+    {
+      icon: "⚡",
+      title: "Gas Optimization",
+      description: "Specific recommendations to reduce deployment and execution costs"
+    },
+    {
+      icon: "✨",
+      title: "Code Quality",
+      description: "Best practices review and maintainability assessment"
+    },
+    {
+      icon: "📋",
+      title: "Professional Reports",
+      description: "Export-ready reports in multiple formats (HTML, PDF, JSON)"
+    }
+  ];
+
   return (
     <Layout>
       <Head>
-        <title>Security Reports - DeFi Watchdog</title>
+        <title>Sample Reports - DeFi Watchdog</title>
+        <meta name="description" content="View sample security analysis reports generated by DeFi Watchdog's multi-AI analysis platform." />
       </Head>
-      
-      <div style={{ maxWidth: '1200px', margin: '2rem auto', padding: '1rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <h1 style={{ fontSize: '2rem', fontWeight: 'bold', margin: 0 }}>Contract Security Reports</h1>
-          
-          <Link
-            href="/audit"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              padding: '0.5rem 1rem',
-              backgroundColor: '#3b82f6',
-              color: 'white',
-              borderRadius: '0.375rem',
-              fontWeight: '500',
-              textDecoration: 'none'
-            }}
-          >
-            Analyze New Contract
-          </Link>
-        </div>
-        
-        {/* Filters and Search */}
-        <div style={{ 
-          display: 'flex', 
-          flexWrap: 'wrap', 
-          gap: '1rem', 
-          marginBottom: '1.5rem',
-          backgroundColor: 'white',
-          padding: '1rem',
-          borderRadius: '0.5rem',
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
-        }}>
-          <div style={{ flex: '1 1 200px' }}>
-            <div style={{ fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.25rem' }}>Network</div>
-            <select
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              style={{ 
-                width: '100%',
-                padding: '0.5rem',
-                borderRadius: '0.375rem',
-                border: '1px solid #d1d5db'
-              }}
-            >
-              <option value="all">All Networks</option>
-              <option value="linea">Linea</option>
-              <option value="sonic">Sonic</option>
-            </select>
-          </div>
-          
-          <div style={{ flex: '1 1 200px' }}>
-            <div style={{ fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.25rem' }}>Sort By</div>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              style={{ 
-                width: '100%',
-                padding: '0.5rem',
-                borderRadius: '0.375rem',
-                border: '1px solid #d1d5db'
-              }}
-            >
-              <option value="date">Date</option>
-              <option value="score">Security Score</option>
-              <option value="issues">Issues Found</option>
-              <option value="name">Contract Name</option>
-            </select>
-          </div>
-          
-          <div style={{ flex: '1 1 200px' }}>
-            <div style={{ fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.25rem' }}>Order</div>
-            <select
-              value={sortOrder}
-              onChange={(e) => setSortOrder(e.target.value)}
-              style={{ 
-                width: '100%',
-                padding: '0.5rem',
-                borderRadius: '0.375rem',
-                border: '1px solid #d1d5db'
-              }}
-            >
-              <option value="desc">Descending</option>
-              <option value="asc">Ascending</option>
-            </select>
-          </div>
-          
-          <div style={{ flex: '2 1 300px' }}>
-            <div style={{ fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.25rem' }}>Search</div>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by contract name or address..."
-              style={{ 
-                width: '100%',
-                padding: '0.5rem',
-                borderRadius: '0.375rem',
-                border: '1px solid #d1d5db'
-              }}
-            />
-          </div>
-        </div>
-        
-        {/* Report Listings */}
-        {loading ? (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            padding: '4rem',
-            backgroundColor: 'white',
-            borderRadius: '0.5rem',
-            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <svg className="animate-spin h-5 w-5 mr-3 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" style={{ animation: 'spin 1s linear infinite', width: '1.25rem', height: '1.25rem', marginRight: '0.75rem', color: '#3b82f6' }}>
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" style={{ opacity: 0.25 }}></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" style={{ opacity: 0.75 }}></path>
-              </svg>
-              Loading security reports...
+
+      <div className="bg-gradient-to-b from-gray-50 to-white">
+        {/* Hero Section */}
+        <section className="pt-32 pb-20">
+          <div className="container mx-auto px-6">
+            <div className="max-w-4xl mx-auto text-center">
+              <div className="inline-flex items-center py-2 px-4 rounded-full bg-purple-100 text-purple-700 text-sm font-medium mb-6">
+                <span className="mr-2">📊</span>
+                Sample Reports
+              </div>
+              
+              <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
+                Professional Security
+                <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent"> Reports</span>
+              </h1>
+              
+              <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+                Explore real examples of our comprehensive security analysis reports. 
+                See how our 9-tool platform identifies vulnerabilities and provides actionable insights.
+              </p>
             </div>
           </div>
-        ) : error ? (
-          <div style={{
-            backgroundColor: '#fee2e2',
-            color: '#b91c1c',
-            padding: '1.5rem',
-            borderRadius: '0.5rem'
-          }}>
-            <p style={{ fontWeight: 'bold', marginBottom: '0.5rem' }}>Error loading reports:</p>
-            <p style={{ margin: '0 0 0.75rem 0' }}>{error}</p>
-            <button 
-              onClick={() => window.location.reload()}
-              style={{
-                backgroundColor: '#b91c1c',
-                color: 'white',
-                padding: '0.5rem 1rem',
-                borderRadius: '0.25rem',
-                border: 'none',
-                cursor: 'pointer'
-              }}
-            >
-              Retry
-            </button>
+        </section>
+
+        {/* Sample Reports Grid */}
+        <section className="py-20 bg-white">
+          <div className="container mx-auto px-6">
+            <div className="max-w-6xl mx-auto">
+              <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
+                Sample Analysis Reports
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {sampleReports.map((report, index) => (
+                  <div key={index} className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden hover:shadow-2xl transition-shadow duration-300">
+                    <div className="p-8">
+                      <div className="text-4xl mb-4 text-center">{report.icon}</div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-3">{report.title}</h3>
+                      <p className="text-gray-600 mb-4">{report.description}</p>
+                      
+                      <div className="space-y-3 mb-6">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-500">Type:</span>
+                          <span className="text-sm font-medium text-purple-600">{report.type}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-500">Findings:</span>
+                          <span className="text-sm font-medium">{report.findings}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-500">Score:</span>
+                          <span className="text-sm font-bold text-green-600">{report.score}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-500">Date:</span>
+                          <span className="text-sm">{report.date}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="mb-6">
+                        <h4 className="text-sm font-semibold text-gray-700 mb-2">Report Highlights:</h4>
+                        <div className="space-y-1">
+                          {report.highlights.map((highlight, idx) => (
+                            <div key={idx} className="flex items-center text-sm text-gray-600">
+                              <span className="w-1.5 h-1.5 bg-purple-400 rounded-full mr-2"></span>
+                              {highlight}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <a
+                        href={report.reportUrl}
+                        target={report.reportUrl !== "#" ? "_blank" : "_self"}
+                        rel="noopener noreferrer"
+                        className={`w-full py-3 px-6 rounded-lg font-semibold text-center block transition-colors ${
+                          report.reportUrl !== "#"
+                            ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-700 hover:to-blue-700"
+                            : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                        }`}
+                      >
+                        {report.reportUrl !== "#" ? "View Report" : "Coming Soon"}
+                      </a>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        ) : filteredAndSortedReports.length > 0 ? (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: '1.5rem'
-          }}>
-            {filteredAndSortedReports.map(report => (
-              <FeaturedReportCard key={report.id} report={report} />
-            ))}
+        </section>
+
+        {/* Report Features */}
+        <section className="py-20 bg-gray-50">
+          <div className="container mx-auto px-6">
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-16">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+                  What's Included in Our Reports
+                </h2>
+                <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                  Every DeFi Watchdog report provides comprehensive analysis and actionable insights 
+                  for developers, auditors, and stakeholders.
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {reportFeatures.map((feature, index) => (
+                  <div key={index} className="bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+                    <div className="text-3xl mb-4">{feature.icon}</div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">{feature.title}</h3>
+                    <p className="text-gray-600">{feature.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        ) : (
-          <div style={{
-            backgroundColor: '#f3f4f6',
-            padding: '4rem 1.5rem',
-            borderRadius: '0.5rem',
-            textAlign: 'center'
-          }}>
-            <p style={{ fontWeight: '500', fontSize: '1.125rem', marginBottom: '0.5rem', color: '#374151' }}>
-              No reports found
+        </section>
+
+        {/* Report Formats */}
+        <section className="py-20 bg-white">
+          <div className="container mx-auto px-6">
+            <div className="max-w-4xl mx-auto">
+              <div className="text-center mb-16">
+                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
+                  Multiple Report Formats
+                </h2>
+                <p className="text-lg text-gray-600">
+                  Get your analysis results in the format that works best for your workflow.
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="text-center p-6 bg-gray-50 rounded-xl">
+                  <div className="text-3xl mb-3">🌐</div>
+                  <h4 className="font-semibold mb-2">HTML</h4>
+                  <p className="text-sm text-gray-600">Interactive web reports with detailed analysis</p>
+                </div>
+                <div className="text-center p-6 bg-gray-50 rounded-xl">
+                  <div className="text-3xl mb-3">📄</div>
+                  <h4 className="font-semibold mb-2">PDF</h4>
+                  <p className="text-sm text-gray-600">Professional documents for presentations</p>
+                </div>
+                <div className="text-center p-6 bg-gray-50 rounded-xl">
+                  <div className="text-3xl mb-3">📊</div>
+                  <h4 className="font-semibold mb-2">JSON</h4>
+                  <p className="text-sm text-gray-600">Machine-readable data for integrations</p>
+                </div>
+                <div className="text-center p-6 bg-gray-50 rounded-xl">
+                  <div className="text-3xl mb-3">📋</div>
+                  <h4 className="font-semibold mb-2">CSV</h4>
+                  <p className="text-sm text-gray-600">Spreadsheet format for data analysis</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-20 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+          <div className="container mx-auto px-6 text-center">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6">
+              Ready to Analyze Your Contract?
+            </h2>
+            <p className="text-xl mb-8 max-w-2xl mx-auto opacity-90">
+              Get the same comprehensive analysis for your smart contracts. 
+              Start with our free tier or upgrade to premium for advanced features.
             </p>
-            <p style={{ color: '#6b7280', margin: '0 0 1.5rem 0' }}>
-              {searchQuery 
-                ? `No reports match your search for "${searchQuery}".`
-                : filter !== 'all'
-                  ? `No reports found for ${filter} network.`
-                  : 'There are no security reports available yet.'}
-            </p>
-            
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                style={{
-                  padding: '0.5rem 1rem',
-                  backgroundColor: 'white',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '0.375rem',
-                  color: '#4b5563',
-                  cursor: 'pointer'
-                }}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <a
+                href="/audit"
+                className="bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
               >
-                Clear Search
-              </button>
-            )}
+                Start Free Analysis
+              </a>
+              <a
+                href="/audit-pro"
+                className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-600 transition-colors"
+              >
+                Try Premium Analysis
+              </a>
+            </div>
           </div>
-        )}
-        
-        {/* Pagination placeholder - would be implemented in a real application */}
-        {!loading && !error && filteredAndSortedReports.length > 0 && (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            marginTop: '2rem',
-            gap: '0.5rem'
-          }}>
-            <button
-              disabled
-              style={{
-                padding: '0.5rem 1rem',
-                backgroundColor: '#f3f4f6',
-                border: '1px solid #d1d5db',
-                borderRadius: '0.375rem',
-                color: '#9ca3af'
-              }}
-            >
-              Previous
-            </button>
-            
-            <button
-              style={{
-                padding: '0.5rem 1rem',
-                backgroundColor: '#3b82f6',
-                border: 'none',
-                borderRadius: '0.375rem',
-                color: 'white',
-                fontWeight: '500'
-              }}
-            >
-              1
-            </button>
-            
-            <button
-              style={{
-                padding: '0.5rem 1rem',
-                backgroundColor: 'white',
-                border: '1px solid #d1d5db',
-                borderRadius: '0.375rem',
-                color: '#4b5563'
-              }}
-            >
-              2
-            </button>
-            
-            <button
-              style={{
-                padding: '0.5rem 1rem',
-                backgroundColor: 'white',
-                border: '1px solid #d1d5db',
-                borderRadius: '0.375rem',
-                color: '#4b5563'
-              }}
-            >
-              Next
-            </button>
-          </div>
-        )}
+        </section>
       </div>
     </Layout>
   );

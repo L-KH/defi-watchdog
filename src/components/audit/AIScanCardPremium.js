@@ -531,7 +531,7 @@ export default function AIScanCardPremium({
                     <div>
                       <h4 className="text-xl font-bold text-gray-900">Premium Security Audit</h4>
                       <div className="flex items-center space-x-2">
-                        <span className="text-2xl font-bold text-gray-900">$0.10</span>
+                        <span className="text-2xl font-bold text-gray-900">$10</span>
                         <span className="text-sm text-gray-500">per analysis</span>
                         <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
                           PREMIUM

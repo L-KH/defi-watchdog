@@ -412,35 +412,43 @@ export default function EnhancedAuditToolPro() {
                 handleAddressSubmit(address.trim(), network);
               }
             }} className="space-y-6">
-              {/* Network Selection */}
+              {/* Enhanced Network Selection */}
               <div className="flex justify-center mb-6">
-                <div className="inline-flex rounded-lg border border-purple-200 bg-purple-50 p-1">
-                  <button
-                    type="button"
-                    onClick={() => setNetwork('linea')}
-                    className={`px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                      network === 'linea'
-                        ? 'bg-white text-purple-700 shadow-sm border border-purple-200'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                    disabled={isLoading}
-                  >
-                    <span className="mr-2">🟢</span>
-                    Linea Network
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setNetwork('sonic')}
-                    className={`px-6 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                      network === 'sonic'
-                        ? 'bg-white text-purple-700 shadow-sm border border-purple-200'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                    disabled={isLoading}
-                  >
-                    <span className="mr-2">🔵</span>
-                    Sonic Network
-                  </button>
+                <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-6 border border-purple-200">
+                  <h3 className="text-center text-sm font-semibold text-gray-800 mb-4">🌐 Supported Networks</h3>
+                  
+                  {/* Active Networks */}
+                  <div className="flex flex-wrap justify-center gap-3 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setNetwork('linea')}
+                      className={`px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 min-w-[140px] ${
+                        network === 'linea'
+                          ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
+                          : 'bg-white text-gray-700 border border-gray-200 hover:border-green-300 hover:bg-green-50'
+                      }`}
+                      disabled={isLoading}
+                    >
+                      <div className="flex items-center justify-center">
+                        <span className="mr-2">🟢</span>
+                        <div>
+                          <div className="font-semibold">Linea</div>
+                          <div className="text-xs opacity-75">Active</div>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* Coming Soon Networks */}
+                  <div className="border-t border-purple-200 pt-4">
+                    <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 border border-purple-100">
+                      <div className="text-center">
+                        <div className="text-2xl mb-2">🌐</div>
+                        <h4 className="font-medium text-gray-800 mb-1">More Networks Coming Soon</h4>
+                        <p className="text-xs text-gray-600">We're expanding to additional blockchain networks</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -500,29 +508,29 @@ export default function EnhancedAuditToolPro() {
                     setAddress('0x2d8879046f1559e53eb052e949e9544bcb72f414');
                     setNetwork('linea');
                   }}
-                  className="text-left p-4 rounded-lg border-2 border-dashed border-purple-200 hover:border-purple-400 hover:bg-purple-50 transition-all duration-200 group"
+                  className="text-left p-4 rounded-lg border-2 border-dashed border-green-200 hover:border-green-400 hover:bg-green-50 transition-all duration-200 group"
                   disabled={isLoading}
                 >
                   <div className="flex items-center mb-2">
                     <span className="mr-2">🟢</span>
-                    <span className="font-medium text-purple-800">Linea DEX Router</span>
+                    <span className="font-medium text-green-800">Linea DEX Router</span>
                   </div>
                   <p className="text-xs text-gray-600 font-mono">0x2d8879046f1559e53eb052e949e9544bcb72f414</p>
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    setAddress('0xDd0F30DdC0D6B16B3e1E40bd7e95854246Ec3A13');
-                    setNetwork('sonic');
+                    setAddress('0x176211869cA2b568f2A7D4EE941E073a821EE1ff');
+                    setNetwork('linea');
                   }}
                   className="text-left p-4 rounded-lg border-2 border-dashed border-blue-200 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 group"
                   disabled={isLoading}
                 >
                   <div className="flex items-center mb-2">
-                    <span className="mr-2">🔵</span>
-                    <span className="font-medium text-blue-800">Sonic Swap Router</span>
+                    <span className="mr-2">🟢</span>
+                    <span className="font-medium text-blue-800">Linea Token Bridge</span>
                   </div>
-                  <p className="text-xs text-gray-600 font-mono">0xDd0F30DdC0D6B16B3e1E40bd7e95854246Ec3A13</p>
+                  <p className="text-xs text-gray-600 font-mono">0x176211869cA2b568f2A7D4EE941E073a821EE1ff</p>
                 </button>
               </div>
             </div>

@@ -42,7 +42,7 @@ export default function AIScanCard({
     premium: {
       name: 'Premium Security Audit',
       icon: '🚀',
-      price: '$0.10',
+      price: '$10',
       priceNote: 'per analysis',
       description: 'Professional-grade analysis with advanced AI models and comprehensive reporting',
       features: [

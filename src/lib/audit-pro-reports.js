@@ -278,6 +278,50 @@ export function generatePremiumMultiAIPdfReport(analysisData) {
 
 // Helper functions
 
+// Helper function to safely get severity/impact as string
+function getSafeImpactString(finding) {
+  // First try severity
+  if (finding.severity && typeof finding.severity === 'string') {
+    return finding.severity.toLowerCase();
+  }
+  
+  // Then try impact - handle both string and object cases
+  if (finding.impact) {
+    if (typeof finding.impact === 'string') {
+      return finding.impact.toLowerCase();
+    } else if (typeof finding.impact === 'object' && finding.impact.level) {
+      return finding.impact.level.toLowerCase();
+    } else if (typeof finding.impact === 'object' && finding.impact.severity) {
+      return finding.impact.severity.toLowerCase();
+    }
+  }
+  
+  // Default fallback
+  return 'medium';
+}
+
+// Helper function to safely get impact display text
+function getSafeImpactDisplay(finding) {
+  // First try severity
+  if (finding.severity && typeof finding.severity === 'string') {
+    return finding.severity;
+  }
+  
+  // Then try impact - handle both string and object cases
+  if (finding.impact) {
+    if (typeof finding.impact === 'string') {
+      return finding.impact;
+    } else if (typeof finding.impact === 'object' && finding.impact.level) {
+      return finding.impact.level;
+    } else if (typeof finding.impact === 'object' && finding.impact.severity) {
+      return finding.impact.severity;
+    }
+  }
+  
+  // Default fallback
+  return 'MEDIUM';
+}
+
 function generateAISpecialistCards(aiReportCards) {
   if (!aiReportCards || aiReportCards.length === 0) {
     return '<div class="no-specialists">No AI specialist data available</div>';
@@ -306,9 +350,9 @@ function generateAISpecialistCards(aiReportCards) {
         </div>
         <div class="specialist-findings">
           ${(card.findings || []).slice(0, 3).map(finding => `
-            <div class="finding-preview ${(finding.severity || finding.impact || 'medium').toLowerCase()}">
+            <div class="finding-preview ${getSafeImpactString(finding)}">
               <span class="finding-title">${finding.title}</span>
-              <span class="finding-severity">${finding.severity || finding.impact || 'MEDIUM'}</span>
+              <span class="finding-severity">${getSafeImpactDisplay(finding)}</span>
             </div>
           `).join('')}
           ${card.findings?.length > 3 ? `<div class="more-findings">+${card.findings.length - 3} more</div>` : ''}
@@ -413,7 +457,7 @@ function generateCodeQualityIssues(issues) {
         <div class="quality-item">
           <div class="quality-header">
             <h4>${issue.title}</h4>
-            <span class="impact-badge ${(issue.impact || 'medium').toLowerCase()}">${issue.impact || 'MEDIUM'}</span>
+            <span class="impact-badge ${getSafeImpactString(issue)}">${getSafeImpactDisplay(issue)}</span>
           </div>
           <div class="quality-content">
             <p><strong>Category:</strong> ${issue.category || 'General'}</p>
