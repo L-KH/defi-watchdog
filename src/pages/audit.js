@@ -267,22 +267,46 @@ export default function EnhancedAuditTool() {
       setIsAIScanning(true);
       setAIError(null);
       
-      console.log('🤖 Starting FREE AI analysis with options:', scanOptions);
+      console.log('🤖 Starting FREE AI analysis on regular audit page:', {
+        scanOptions,
+        page: '/audit',
+        contractName: contractInfo.contractName
+      });
       
       const result = await analyzeWithAI(
         contractSource,
         contractInfo.contractName || 'Unknown Contract',
         { 
           ...scanOptions,
-          type: 'free', // Force free analysis
+          type: 'free', // Force free analysis on regular audit page
+          plan: 'free', // Ensure it's marked as free
+          source: 'regular-audit-page', // Track source
           timeout: 120000, // 2 minutes for free
           temperature: 0.1,
           max_tokens: 4000
         }
       );
       
-      result.contractInfo = contractInfo;
-      result.scanOptions = scanOptions;
+      console.log('📊 AI Analysis result:', {
+        success: result.success,
+        type: result.type,
+        scanOptions: result.scanOptions,
+        hasAnalysis: !!result.analysis
+      });
+      
+      // Ensure contract info is properly attached to the result
+      result.contractInfo = {
+        ...contractInfo,
+        address: contractInfo?.address || address,
+        contractAddress: contractInfo?.contractAddress || address,
+        network: network
+      };
+      result.scanOptions = {
+        ...scanOptions,
+        type: 'free',
+        plan: 'free',
+        source: 'regular-audit-page'
+      };
       setAIScanResult(result);
       
       if (result.success !== false) {
@@ -346,40 +370,37 @@ export default function EnhancedAuditTool() {
                 handleAddressSubmit(address.trim(), network);
               }
             }} className="space-y-6">
-              {/* Enhanced Network Selection */}
-              <div className="flex justify-center mb-6">
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
-                  <h3 className="text-center text-sm font-semibold text-gray-800 mb-4">🌐 Supported Networks</h3>
-                  
-                  {/* Active Networks */}
-                  <div className="flex flex-wrap justify-center gap-3 mb-4">
-                    <button
-                      type="button"
-                      onClick={() => setNetwork('linea')}
-                      className={`px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 min-w-[140px] ${
-                        network === 'linea'
-                          ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
-                          : 'bg-white text-gray-700 border border-gray-200 hover:border-green-300 hover:bg-green-50'
-                      }`}
-                      disabled={isLoading}
-                    >
-                      <div className="flex items-center justify-center">
-                        <span className="mr-2">🟢</span>
-                        <div>
-                          <div className="font-semibold">Linea</div>
-                          <div className="text-xs opacity-75">Active</div>
-                        </div>
+              {/* Enhanced Network Selection - Horizontal Layout */}
+              <div className="mb-6">
+                <h3 className="text-center text-sm font-semibold text-gray-800 mb-4">🌐 Supported Networks</h3>
+                <div className="flex justify-center items-center gap-6">
+                  {/* Active Network */}
+                  <button
+                    type="button"
+                    onClick={() => setNetwork('linea')}
+                    className={`px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      network === 'linea'
+                        ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
+                        : 'bg-white text-gray-700 border border-gray-200 hover:border-green-300 hover:bg-green-50'
+                    }`}
+                    disabled={isLoading}
+                  >
+                    <div className="flex items-center">
+                      <span className="mr-2">🟢</span>
+                      <div>
+                        <div className="font-semibold">Linea</div>
+                        <div className="text-xs opacity-75">Active</div>
                       </div>
-                    </button>
-                  </div>
-
-                  {/* Coming Soon Networks */}
-                  <div className="border-t border-blue-200 pt-4">
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
-                      <div className="text-center">
-                        <div className="text-2xl mb-2">🌐</div>
-                        <h4 className="font-medium text-gray-800 mb-1">More Networks Coming Soon</h4>
-                        <p className="text-xs text-gray-600">We're expanding to additional blockchain networks</p>
+                    </div>
+                  </button>
+                  
+                  {/* Coming Soon Indicator */}
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl px-4 py-3 border border-blue-100">
+                    <div className="flex items-center">
+                      <span className="text-lg mr-2">🌐</span>
+                      <div>
+                        <div className="font-medium text-gray-800 text-sm">More Networks</div>
+                        <div className="text-xs text-gray-600">Coming Soon</div>
                       </div>
                     </div>
                   </div>
@@ -439,7 +460,7 @@ export default function EnhancedAuditTool() {
                 <button
                   type="button"
                   onClick={() => {
-                    setAddress('0x2d8879046f1559e53eb052e949e9544bcb72f414');
+                    setAddress('0x176211869cA2b568f2A7D4EE941E073a821EE1ff');
                     setNetwork('linea');
                   }}
                   className="text-left p-4 rounded-lg border-2 border-dashed border-green-200 hover:border-green-400 hover:bg-green-50 transition-all duration-200 group"
@@ -447,14 +468,14 @@ export default function EnhancedAuditTool() {
                 >
                   <div className="flex items-center mb-2">
                     <span className="mr-2">🟢</span>
-                    <span className="font-medium text-green-800">Linea DEX Router</span>
+                    <span className="font-medium text-green-800">Linea USDC Token</span>
                   </div>
-                  <p className="text-xs text-gray-600 font-mono">0x2d8879046f1559e53eb052e949e9544bcb72f414</p>
+                  <p className="text-xs text-gray-600 font-mono">0x176211869cA2b568f2A7D4EE941E073a821EE1ff</p>
                 </button>
                 <button
                   type="button"
                   onClick={() => {
-                    setAddress('0x176211869cA2b568f2A7D4EE941E073a821EE1ff');
+                    setAddress('0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f');
                     setNetwork('linea');
                   }}
                   className="text-left p-4 rounded-lg border-2 border-dashed border-blue-200 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 group"
@@ -462,9 +483,9 @@ export default function EnhancedAuditTool() {
                 >
                   <div className="flex items-center mb-2">
                     <span className="mr-2">🟢</span>
-                    <span className="font-medium text-blue-800">Linea Token Bridge</span>
+                    <span className="font-medium text-blue-800">Linea WETH Token</span>
                   </div>
-                  <p className="text-xs text-gray-600 font-mono">0x176211869cA2b568f2A7D4EE941E073a821EE1ff</p>
+                  <p className="text-xs text-gray-600 font-mono">0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f</p>
                 </button>
               </div>
             </div>
@@ -555,41 +576,20 @@ export default function EnhancedAuditTool() {
           </div>
         )}
 
-        {/* Results Section */}
-        {(toolsScanResult || aiScanResult) && (
+        {/* Results Section - SHOW MINTING EVEN WITHOUT SOURCE CODE */}
+        {(toolsScanResult || aiScanResult || (contractInfo && !loadingError)) && (
           <EnhancedScanResults
             toolsResult={toolsScanResult}
             aiResult={aiScanResult}
-            contractInfo={contractInfo}
+            contractInfo={contractInfo || {
+              contractName: `Contract-${address?.slice(0, 8)}` || 'Unknown Contract',
+              address: address,
+              network: network
+            }}
           />
         )}
 
-        {/* Upgrade CTA */}
-        {contractSource && !loadingError && (
-          <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl border border-purple-200 p-8 mb-12">
-            <div className="max-w-4xl mx-auto text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl mb-4">
-                <span className="text-2xl text-white">🚀</span>
-              </div>
-              <h3 className="text-2xl font-bold text-purple-900 mb-4">Want More Advanced Analysis?</h3>
-              <p className="text-purple-700 mb-6 max-w-2xl mx-auto">
-                Upgrade to Premium for 6+ AI models, supervisor verification, comprehensive reporting, and advanced security features.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <a
-                  href="/audit-pro"
-                  className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 font-semibold"
-                >
-                  <span className="mr-2">🚀</span>
-                  Try Premium Audit
-                </a>
-                <div className="text-sm text-purple-600">
-                  ✨ 6+ AI Models • Supervisor Verification • Professional Reports
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+
 
         {/* Security Analysis Summary */}
         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border border-blue-200 p-8">

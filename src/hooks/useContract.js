@@ -11,7 +11,8 @@ const ACCEPTED_CHAIN_IDS = [SONIC_CHAIN_ID, LINEA_CHAIN_ID];
 const CONTRACTS = {
   [SONIC_CHAIN_ID]: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS_SONIC,
   [LINEA_CHAIN_ID]: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS_LINEA,
-  'default': process.env.NEXT_PUBLIC_CONTRACT_ADDRESS // Fallback to original env var
+  [11155111]: process.env.NEXT_PUBLIC_AUDIT_NFT_CONTRACT, // Sepolia
+  'default': process.env.NEXT_PUBLIC_AUDIT_NFT_CONTRACT // Fallback to original env var
 };
 
 // Hardcoded contract ABI for when the import fails
@@ -93,10 +94,12 @@ export function useContract() {
             try {
               // Try to dynamically import the contract ABI
               const contractJson = await import('../contracts/DeFiWatchdogCertificate.json');
-              if (contractJson && contractJson.default) {
+              if (contractJson && contractJson.default && Array.isArray(contractJson.default)) {
                 contractAbi = contractJson.default;
-              } else if (contractJson) {
+              } else if (contractJson && Array.isArray(contractJson)) {
                 contractAbi = contractJson;
+              } else {
+                console.warn('Contract ABI not found in expected format, using fallback ABI');
               }
             } catch (importError) {
               console.warn('Could not import contract ABI, using fallback ABI', importError);
@@ -207,7 +210,7 @@ export function useContract() {
   }, [account]);
 
   // Function to mint a certificate
-  const mintCertificate = async (contractAddress) => {
+  const mintCertificate = async (contractAddress, ipfsHash = null) => {
     if (!contract) {
       throw new Error('Contract not initialized');
     }
@@ -315,9 +318,16 @@ export function useContract() {
           const newNetworkContractAddress = CONTRACTS[newChainIdNum] || CONTRACTS['default'];
           
           // Create updated contract with the correct address
+          let updatedContractAbi = contract.interface;
+          
+          // If the interface is invalid, use fallback ABI
+          if (!updatedContractAbi || !updatedContractAbi.format) {
+            updatedContractAbi = FALLBACK_ABI;
+          }
+          
           const updatedContract = new ethers.Contract(
             newNetworkContractAddress,
-            contract.interface,
+            updatedContractAbi,
             ethereumSigner
           );
           
@@ -337,11 +347,17 @@ export function useContract() {
       try {
         console.log('Calling contract.mintCertificate with address:', address);
         console.log('Using mint fee:', mintFee.toString());
+        console.log('IPFS hash:', ipfsHash);
         
         // Call mintCertificate function on the contract
-        const tx = await contractToUse.mintCertificate(address, {
-          value: mintFee,
-        });
+        // Include IPFS hash if provided for metadata
+        const tx = ipfsHash 
+          ? await contractToUse.mintCertificate(address, ipfsHash, {
+              value: mintFee,
+            })
+          : await contractToUse.mintCertificate(address, {
+              value: mintFee,
+            });
         
         console.log('Transaction sent:', tx.hash);
         

@@ -1,47 +1,92 @@
 /**
- * Next.js configuration optimized for Next.js 15.2.0
- * Stable configuration without profiling issues
+ * Next.js configuration optimized for Web3 and ES modules
  */
 const nextConfig = {
-  reactStrictMode: false, // Disabled to prevent double-execution issues
+  reactStrictMode: false, // Prevents double initialization issues
   
   images: {
     domains: ['images.unsplash.com', 'via.placeholder.com'],
   },
   
-  // Server-side dependencies for Vercel
+  // Move to correct location for Next.js 15
   serverExternalPackages: ['ethers', 'pino', 'mongodb'],
   
-  // Experimental features
-  experimental: {
-    serverActions: {
-      bodySizeLimit: '2mb',
-    },
+  // Webpack configuration to handle Web3 packages
+  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+    // Only add polyfills for client-side builds
+    if (!isServer) {
+      // Handle fallbacks for Node.js modules in browser
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+        crypto: false, // Let browser use native crypto
+        stream: false,
+        url: false,
+        zlib: false,
+        http: false,
+        https: false,
+        assert: false,
+        os: false,
+        path: false,
+      };
+
+      // Add polyfills plugin
+      config.plugins.push(
+        new webpack.ProvidePlugin({
+          process: 'process/browser',
+          Buffer: ['buffer', 'Buffer'],
+        })
+      );
+    }
+
+    // Handle .mjs files
+    config.module.rules.push({
+      test: /\.mjs$/,
+      include: /node_modules/,
+      type: 'javascript/auto',
+    });
+
+    // Optimize for Web3 packages
+    if (!isServer) {
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          default: false,
+          vendors: false,
+          vendor: {
+            name: 'vendor',
+            chunks: 'all',
+            test: /node_modules/,
+            priority: 20,
+          },
+          web3: {
+            name: 'web3',
+            chunks: 'all',
+            test: /node_modules\/(wagmi|viem|@rainbow-me|@walletconnect|@tanstack)/,
+            priority: 30,
+          },
+        },
+      };
+    }
+
+    return config;
   },
-  
-  // Environment variables for build
+
+  // Environment variables
   env: {
     CUSTOM_KEY: process.env.CUSTOM_KEY,
   },
-  
-  // Static generation timeout
-  staticPageGenerationTimeout: 60,
-  
-  // Enhanced redirects for route normalization
+
+  // Redirects for route normalization
   async redirects() {
     return [
-      // Normalize audit pro route
       {
         source: '/audit_pro',
         destination: '/audit-pro',
         permanent: true,
       },
-      {
-        source: '/auditpro',
-        destination: '/audit-pro',
-        permanent: true,
-      },
-      // Normalize other routes
       {
         source: '/home',
         destination: '/',
@@ -49,8 +94,8 @@ const nextConfig = {
       },
     ];
   },
-  
-  // Cache headers for better performance
+
+  // Headers for API and static files
   async headers() {
     return [
       {
@@ -74,42 +119,7 @@ const nextConfig = {
           },
         ],
       },
-      {
-        source: '/:path*.(js|css|svg|jpg|jpeg|png|gif|ico|woff|woff2)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
     ];
-  },
-  
-  // Simplified webpack configuration to prevent Fast Refresh issues
-  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    // Prevent Fast Refresh reload loops
-    if (dev && !isServer) {
-      config.watchOptions = {
-        poll: 1000,
-        aggregateTimeout: 300,
-        ignored: /node_modules/,
-      };
-    }
-    
-    // Optimize bundle size
-    config.optimization.splitChunks = {
-      chunks: 'all',
-      cacheGroups: {
-        vendor: {
-          test: /[\\/]node_modules[\\/]/,
-          name: 'vendors',
-          chunks: 'all',
-        },
-      },
-    };
-    
-    return config;
   },
 };
 

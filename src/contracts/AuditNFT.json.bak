@@ -1,0 +1,45 @@
+// src/contracts/AuditNFT.json - Contract ABI for frontend integration
+
+// This file will be auto-generated after contract compilation
+// It contains the contract ABI and will be populated after running:
+// npm run compile
+
+// The ABI will be automatically copied from artifacts/contracts/DeFiWatchdogAuditNFT.sol/DeFiWatchdogAuditNFT.json
+
+export const AUDIT_NFT_ABI = [
+  // ABI will be populated after compilation
+];
+
+// Contract addresses for different networks
+export const AUDIT_NFT_ADDRESSES = {
+  sepolia: process.env.NEXT_PUBLIC_AUDIT_NFT_CONTRACT || "",
+  localhost: "0x5FbDB2315678afecb367f032d93F642f64180aa3", // Default localhost address
+};
+
+// Contract configuration
+export const AUDIT_NFT_CONFIG = {
+  name: "DeFi Watchdog Audit Report",
+  symbol: "DWARN",
+  aiAuditPrice: "0.003", // ETH
+  staticAuditPrice: "0", // Free
+  
+  // Audit types
+  AUDIT_TYPES: {
+    STATIC: 0,
+    AI_POWERED: 1
+  },
+  
+  // Risk levels
+  RISK_LEVELS: {
+    LOW: 0,
+    MEDIUM: 1,
+    HIGH: 2,
+    CRITICAL: 3
+  }
+};
+
+export default {
+  ABI: AUDIT_NFT_ABI,
+  ADDRESSES: AUDIT_NFT_ADDRESSES,
+  CONFIG: AUDIT_NFT_CONFIG
+};

@@ -241,28 +241,43 @@ export async function findAuditReports(query, options = {}) {
  */
 function findReportsFromLocalStorage(query, options = {}) {
   try {
-    if (!query.address) {
+    // Support both address and userAddress fields
+    const searchAddress = query.userAddress || query.address;
+    if (!searchAddress) {
+      console.log('No address provided in query:', query);
       return [];
     }
     
-    const contractDir = path.join(DATA_DIR, query.address.toLowerCase());
+    console.log('Searching for audits with address:', searchAddress.slice(0, 10) + '...');
+    
+    const contractDir = path.join(DATA_DIR, searchAddress.toLowerCase());
     
     if (!fs.existsSync(contractDir)) {
+      console.log('Contract directory does not exist:', contractDir);
       return [];
     }
     
     // Get all files
     const files = fs.readdirSync(contractDir);
+    console.log('Found files in directory:', files.length);
     
     if (files.length === 0) {
       return [];
     }
     
     // Load all reports
-    const reports = files.map(file => {
-      const filePath = path.join(contractDir, file);
-      return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+    const reports = [];
+    files.forEach(file => {
+      try {
+        const filePath = path.join(contractDir, file);
+        const reportData = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+        reports.push(reportData);
+      } catch (error) {
+        console.error(`Error loading report file ${file}:`, error.message);
+      }
     });
+    
+    console.log('Loaded reports:', reports.length);
     
     // Sort reports
     const sortField = options.sortBy || 'createdAt';

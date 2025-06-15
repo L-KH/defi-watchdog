@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
+import UnifiedWeb3Button from '../UnifiedWeb3Button';
 
 // Enhanced Header with fixed hydration and improved UI
 const Header = () => {
@@ -10,7 +11,8 @@ const Header = () => {
     { path: '/', label: 'Home', icon: '🏠' },
     { path: '/dashboard', label: 'Dashboard', icon: '📊' },
     { path: '/audit', label: 'Audit', icon: '🔍' },
-    { path: '/audit-pro', label: 'Audit Pro', icon: '🚀' },
+    { path: '/audit-pro', label: 'Audit Pro', icon: '🚀', comingSoon: true },
+    { path: '/audit-history', label: 'Audit History', icon: '📁' },
     { path: '/how-it-works', label: 'How It Works', icon: '❓' }
   ];
 
@@ -46,6 +48,25 @@ const Header = () => {
           <nav className="hidden md:flex items-center space-x-1">
             {menuItems.map((item) => {
               const isActive = currentPath === item.path;
+              const isComingSoon = item.comingSoon;
+              
+              // For coming soon items, render as disabled span
+              if (isComingSoon) {
+                return (
+                  <div
+                    key={item.path}
+                    className="relative px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 cursor-not-allowed opacity-60"
+                  >
+                    <span className="relative flex items-center space-x-2">
+                      <span className="text-lg">{item.icon}</span>
+                      <span>{item.label}</span>
+                      <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-medium">
+                        Coming Soon
+                      </span>
+                    </span>
+                  </div>
+                );
+              }
               
               return (
                 <a
@@ -79,24 +100,16 @@ const Header = () => {
             })}
           </nav>
 
-          {/* Right side items */}
+          {/* Right side - Web3 Button */}
           <div className="flex items-center space-x-4">
-            {/* Wallet Connect Button - Desktop */}
+            {/* Web3 Button - Always visible on desktop */}
             <div className="hidden md:block">
-              <button className="relative group px-5 py-2.5 font-medium text-white transition-all duration-200">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg group-hover:shadow-xl transition-shadow"></div>
-                <span className="relative flex items-center space-x-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                  </svg>
-                  <span>Connect Wallet</span>
-                </span>
-              </button>
+              <UnifiedWeb3Button showBalance={false} showChain={true} size="default" />
             </div>
 
-            {/* Mobile Menu Button - Enhanced */}
+            {/* Mobile Menu Button */}
             <button
-              className="md:hidden relative p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all"
+              className="md:hidden relative p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all z-10"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
               <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -111,12 +124,29 @@ const Header = () => {
         </div>
 
         {/* Mobile Menu - Enhanced with animations */}
-        <div className={`md:hidden transition-all duration-300 ease-in-out ${
+        <div className={`md:hidden transition-all duration-300 ease-in-out bg-white border-t border-gray-100 ${
           mobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
         }`}>
           <nav className="py-4 space-y-1">
             {menuItems.map((item) => {
               const isActive = currentPath === item.path;
+              const isComingSoon = item.comingSoon;
+              
+              // For coming soon items, render as disabled div
+              if (isComingSoon) {
+                return (
+                  <div
+                    key={item.path}
+                    className="flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm transition-all mx-4 cursor-not-allowed opacity-60 bg-gray-50"
+                  >
+                    <span className="text-lg">{item.icon}</span>
+                    <span>{item.label}</span>
+                    <span className="text-xs bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full font-medium ml-auto">
+                      Coming Soon
+                    </span>
+                  </div>
+                );
+              }
               
               return (
                 <a
@@ -124,7 +154,7 @@ const Header = () => {
                   href={item.path}
                   onClick={() => setMobileMenuOpen(false)}
                   className={`
-                    flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm transition-all
+                    flex items-center space-x-3 px-4 py-3 rounded-lg font-medium text-sm transition-all mx-4
                     ${isActive 
                       ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg' 
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -140,19 +170,12 @@ const Header = () => {
                   )}
                 </a>
               );
-            })}
+            })
+            }
             
-            {/* Mobile Wallet Button */}
+            {/* Mobile Web3 Button */}
             <div className="pt-4 px-4">
-              <button className="w-full relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg"></div>
-                <span className="relative flex items-center justify-center space-x-2 px-4 py-3 font-medium text-white">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                  </svg>
-                  <span>Connect Wallet</span>
-                </span>
-              </button>
+              <UnifiedWeb3Button showBalance={false} showChain={true} size="default" />
             </div>
           </nav>
         </div>

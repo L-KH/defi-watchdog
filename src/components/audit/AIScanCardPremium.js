@@ -4,6 +4,9 @@ import React, { useState, useEffect } from 'react';
 import useMultiAIScanner, { AI_MODELS } from './MultiAIScanner';
 import AuditProExporter from './export/AuditProExporter';
 import APIKeyManager from '../settings/APIKeyManager';
+import { useToast } from '../common/Toast';
+import ContractDiagnostics from '../ContractDiagnostics';
+import PaymentModal from '../PaymentModal';
 
 export default function AIScanCardPremium({ 
   isScanning: externalIsScanning, 
@@ -24,6 +27,12 @@ export default function AIScanCardPremium({
   const [showDoneButton, setShowDoneButton] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(false);
   const [showApiKeyManager, setShowApiKeyManager] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [hasPaid, setHasPaid] = useState(false);
+  const [currentRequestId, setCurrentRequestId] = useState(null);
+  
+  // Toast hook
+  const { showError, showSuccess, showWarning } = useToast();
 
   // Check for API key on mount
   useEffect(() => {
@@ -34,6 +43,84 @@ export default function AIScanCardPremium({
     };
     checkApiKey();
   }, []);
+
+  // Enhanced save audit function with enhanced persistence
+  const saveAuditReport = async (auditResult, requestId, txHash) => {
+    try {
+      console.log('💾 Saving audit report with enhanced persistence...');
+      
+      const response = await fetch('/api/enhanced-audit-persistence', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          requestId: requestId,
+          contractAddress: contractInfo?.address || 'unknown',
+          contractName: contractInfo?.contractName || 'Unknown Contract',
+          userAddress: window.ethereum?.selectedAddress || 'unknown',
+          txHash: txHash,
+          auditResult: auditResult,
+          securityScore: auditResult?.analysis?.securityScore || 75,
+          riskLevel: auditResult?.analysis?.riskLevel || 'Medium',
+          reportData: {
+            html: auditResult?.htmlReport || null,
+            json: auditResult?.jsonReport || null,
+            timestamp: Date.now()
+          },
+          forceUpdate: false // Don't overwrite existing completed audits
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('✅ Audit report saved successfully:', result.auditId);
+        
+        // Update localStorage entry to mark as completed and store IPFS data
+        if (requestId && requestId !== 'free_' + requestId) {
+          try {
+            const existingEntry = localStorage.getItem(`audit_${requestId}`);
+            if (existingEntry) {
+              const parsed = JSON.parse(existingEntry);
+              const updated = {
+                ...parsed,
+                completed: true,
+                securityScore: auditResult?.analysis?.securityScore || 75,
+                riskLevel: auditResult?.analysis?.riskLevel || 'Medium',
+                reportData: auditResult,
+                completedAt: Date.now(),
+                
+                // IPFS data from API response
+                reportIPFSHash: result.ipfs?.hash || '',
+                reportIPFSUrl: result.ipfs?.url || '',
+                hasIPFSReport: result.ipfs?.uploaded || false,
+                ipfsUploadSuccess: result.ipfs?.success || false
+              };
+              localStorage.setItem(`audit_${requestId}`, JSON.stringify(updated));
+              console.log('✅ Updated localStorage entry for request:', requestId, {
+                ipfsHash: result.ipfs?.hash?.slice(0, 10) + '...' || 'none',
+                ipfsSuccess: result.ipfs?.success
+              });
+            }
+          } catch (error) {
+            console.warn('⚠️ Failed to update localStorage entry:', error.message);
+          }
+        }
+        
+        showSuccess(`Audit report saved${result.ipfs?.uploaded ? ' to IPFS' : ''}!`);
+        return true;
+      } else {
+        console.error('❌ Failed to save audit report:', result.error);
+        showError('Failed to save audit report: ' + result.error);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Error saving audit report:', error);
+      showError('Error saving audit report: ' + error.message);
+      return false;
+    }
+  };
 
   // Initialize MultiAIScanner
   const {
@@ -46,7 +133,8 @@ export default function AIScanCardPremium({
   } = useMultiAIScanner({
     contractSource,
     contractInfo,
-    onComplete: (results) => {
+    requestId: currentRequestId,
+    onComplete: async (results) => {
       console.log('📊 Analysis API completed, starting results processing...');
       setIsProcessingResults(true);
       setShowResultsLoading(true);
@@ -56,6 +144,54 @@ export default function AIScanCardPremium({
       
       // Start the parent scan process
       onScan(results);
+      
+      // CRITICAL: Save the audit report to user's history
+      // This now works regardless of payment status to ensure no audits are lost
+      const userAddress = window.ethereum?.selectedAddress;
+      const contractAddress = contractInfo?.address;
+      
+      if (userAddress && contractAddress && results) {
+        console.log('💾 Saving audit report (universal save)...', {
+          hasCurrentRequestId: !!currentRequestId,
+          userAddress: userAddress.slice(0, 10) + '...',
+          contractAddress: contractAddress.slice(0, 10) + '...',
+          hasResults: !!results
+        });
+        
+        // Always save, regardless of payment status
+        const requestIdToUse = currentRequestId || 'free_' + Date.now();
+        const txHashToUse = currentRequestId ? localStorage.getItem(`audit_${currentRequestId}_txHash`) : null;
+        
+        const saved = await saveAuditReport(results, requestIdToUse, txHashToUse);
+        
+        if (saved) {
+          // Trigger a history refresh by dispatching a custom event
+          window.dispatchEvent(new CustomEvent('auditCompleted', { 
+            detail: { 
+              requestId: requestIdToUse,
+              paid: !!currentRequestId,
+              txHash: txHashToUse
+            } 
+          }));
+          
+          // Store result globally for debugging
+          window._lastAuditResult = results;
+          window._lastContractInfo = contractInfo;
+        }
+      } else {
+        console.warn('⚠️ Cannot save audit - missing required data:', {
+          hasUserAddress: !!userAddress,
+          hasContractAddress: !!contractAddress,
+          hasResults: !!results
+        });
+        
+        // Fallback: Store in sessionStorage for recovery
+        if (results) {
+          sessionStorage.setItem('lastAuditResult', JSON.stringify(results));
+          sessionStorage.setItem('lastContractInfo', JSON.stringify(contractInfo));
+          console.log('💾 Stored audit in sessionStorage for recovery');
+        }
+      }
       
       // Show loading for 2 seconds, then show done button instead of continuing to load
       setTimeout(() => {
@@ -80,6 +216,34 @@ export default function AIScanCardPremium({
       return;
     }
     
+    // Show payment modal for premium analysis
+    setShowPaymentModal(true);
+  };
+
+  const handlePaymentComplete = async (paymentData) => {
+    console.log('Payment completed:', paymentData);
+    setShowPaymentModal(false);
+    setHasPaid(true);
+    
+    // Generate request ID
+    const requestId = `audit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    setCurrentRequestId(requestId);
+    
+    // Store payment and audit info
+    const auditData = {
+      requestId,
+      contractAddress: contractInfo?.address,
+      contractName: contractInfo?.contractName,
+      txHash: paymentData.txHash,
+      amount: paymentData.amount,
+      paid: true,
+      status: 'analyzing',
+      timestamp: Date.now()
+    };
+    
+    localStorage.setItem(`audit_${requestId}`, JSON.stringify(auditData));
+    
+    // Start analysis
     setShowMultiAI(true);
     await performMultiAIScan();
   };
@@ -92,6 +256,14 @@ export default function AIScanCardPremium({
   };
 
   const isScanning = externalIsScanning || multiAIScanning;
+
+  // Debug logging for audit type
+  console.log('🔍 AIScanCardPremium Debug:', {
+    auditType: 'premium',
+    isScanning,
+    externalIsScanning,
+    multiAIScanning
+  });
 
   return (
     <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
@@ -120,6 +292,9 @@ export default function AIScanCardPremium({
       </div>
 
       <div className="p-8">
+        {/* Contract Diagnostics */}
+        <ContractDiagnostics />
+
         {/* API Key Manager */}
         {showApiKeyManager && (
           <div className="mb-6">
@@ -531,8 +706,8 @@ export default function AIScanCardPremium({
                     <div>
                       <h4 className="text-xl font-bold text-gray-900">Premium Security Audit</h4>
                       <div className="flex items-center space-x-2">
-                        <span className="text-2xl font-bold text-gray-900">$10</span>
-                        <span className="text-sm text-gray-500">per analysis</span>
+                        <span className="text-2xl font-bold text-gray-900">0.003 ETH</span>
+                        <span className="text-sm text-gray-500">(~$10)</span>
                         <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
                           PREMIUM
                         </span>
@@ -578,8 +753,8 @@ export default function AIScanCardPremium({
               </div>
             ) : (
               <div className="flex items-center justify-center">
-                <span className="text-xl mr-3">🚀</span>
-                Run Comprehensive Multi-AI Analysis
+                <span className="text-xl mr-3">💰</span>
+                Pay 0.003 ETH & Start Analysis
               </div>
             )}
           </button>
@@ -591,6 +766,16 @@ export default function AIScanCardPremium({
           </p>
         )}
       </div>
+
+      {/* Payment Modal */}
+      {showPaymentModal && (
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          onPaymentComplete={handlePaymentComplete}
+          contractInfo={contractInfo}
+        />
+      )}
     </div>
   );
 }

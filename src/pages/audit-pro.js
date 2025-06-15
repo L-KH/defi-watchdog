@@ -1,4 +1,4 @@
-// src/pages/audit-pro.js - PREMIUM AUDIT PAGE (RESTORED PROPER FLOW)
+// src/pages/audit-pro.js - PREMIUM AUDIT PAGE (ENHANCED WORKING VERSION)
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
@@ -10,9 +10,135 @@ import { analyzeWithAI } from '../lib/aiAnalysis';
 // Component imports for Premium page
 import AIScanCardPremium from '../components/audit/AIScanCardPremium';
 import EnhancedScanResults from '../components/audit/EnhancedScanResults';
+import MockStaticToolsCard from '../components/MockStaticToolsCard'; // Mock tools component
 
-// Empty Static Analysis Card Component for Pro
-function ToolsScanCardPro({ scannerHealth, toolsInfo, isLoading, isScanning, onScan, error, result }) {
+// Empty Static Analysis Card Component for Pro - Now with Mock Analysis
+function ToolsScanCardPro({ scannerHealth, toolsInfo, isLoading, isScanning, onScan, error, result, contractSource, contractInfo }) {
+  const [isMockScanning, setIsMockScanning] = useState(false);
+  const [mockResult, setMockResult] = useState(null);
+  
+  // Enhanced mock analysis generator
+  const generateMockAnalysis = async () => {
+    if (!contractSource || !contractInfo) {
+      alert('Please load a contract first to run mock analysis');
+      return;
+    }
+    
+    setIsMockScanning(true);
+    
+    // Simulate analysis time
+    await new Promise(resolve => setTimeout(resolve, 3000));
+    
+    const mockAnalysisResult = {
+      success: true,
+      analysisType: 'premium_mock',
+      metadata: {
+        contractName: contractInfo.contractName || 'Test Contract',
+        contractAddress: contractInfo.address,
+        analyzedAt: new Date().toISOString(),
+        analysisVersion: '2.0-mock',
+        tools: ['MockSlither', 'MockMythril', 'MockSemgrep', 'MockSolhint', 'MockDetector']
+      },
+      analysis: {
+        summary: 'Mock comprehensive security analysis completed. This is a test analysis with realistic findings for development purposes.',
+        overview: 'Professional mock audit analysis simulating real-world security assessment results.',
+        securityScore: Math.floor(Math.random() * 30) + 65, // Random score 65-95
+        riskLevel: ['Low', 'Medium'][Math.floor(Math.random() * 2)],
+        
+        keyFindings: [
+          {
+            id: 'MOCK_001',
+            title: 'Potential Reentrancy Vulnerability',
+            severity: 'MEDIUM',
+            description: 'Mock finding: The contract may be vulnerable to reentrancy attacks in the withdraw function.',
+            location: 'Line 45-67',
+            recommendation: 'Implement checks-effects-interactions pattern and use ReentrancyGuard.',
+            category: 'Security'
+          },
+          {
+            id: 'MOCK_002', 
+            title: 'Gas Optimization Opportunity',
+            severity: 'LOW',
+            description: 'Mock finding: Loop operations can be optimized to reduce gas consumption.',
+            location: 'Line 23-35',
+            recommendation: 'Consider using more efficient data structures or batch operations.',
+            category: 'Gas Optimization'
+          },
+          {
+            id: 'MOCK_003',
+            title: 'Access Control Review',
+            severity: 'INFO',
+            description: 'Mock finding: Review access control modifiers for proper permission management.',
+            location: 'Multiple functions',
+            recommendation: 'Ensure all sensitive functions have appropriate access controls.',
+            category: 'Best Practices'
+          }
+        ],
+        
+        gasOptimizations: [
+          {
+            title: 'Storage Variable Packing',
+            description: 'Reorder storage variables to pack them efficiently',
+            potentialSavings: '2,500 gas per transaction',
+            severity: 'MEDIUM'
+          },
+          {
+            title: 'Loop Optimization',
+            description: 'Cache array length in loops',
+            potentialSavings: '50 gas per iteration',
+            severity: 'LOW'
+          }
+        ],
+        
+        codeQualityIssues: [
+          {
+            title: 'Missing Documentation',
+            description: 'Add NatSpec comments to public functions',
+            location: 'Multiple functions',
+            severity: 'INFO'
+          }
+        ],
+        
+        gasOptimizationScore: Math.floor(Math.random() * 20) + 75,
+        codeQualityScore: Math.floor(Math.random() * 25) + 70
+      },
+      
+      modelsUsed: ['MockGPT-4', 'MockClaude', 'MockDeepSeek'],
+      processingTime: '3.2 seconds (mock)',
+      
+      // Add mock reports
+      htmlReport: `
+        <h1>Mock Security Audit Report</h1>
+        <h2>Contract: ${contractInfo.contractName || 'Test Contract'}</h2>
+        <p><strong>Address:</strong> ${contractInfo.address}</p>
+        <p><strong>Analysis Date:</strong> ${new Date().toLocaleString()}</p>
+        <h3>Executive Summary</h3>
+        <p>This is a mock comprehensive security analysis for testing purposes.</p>
+        <h3>Findings</h3>
+        <ul>
+          <li><strong>MEDIUM:</strong> Potential Reentrancy Vulnerability</li>
+          <li><strong>LOW:</strong> Gas Optimization Opportunity</li>
+          <li><strong>INFO:</strong> Access Control Review</li>
+        </ul>
+      `,
+      
+      jsonReport: JSON.stringify({
+        contract: contractInfo.contractName,
+        address: contractInfo.address,
+        findings: 3,
+        score: Math.floor(Math.random() * 30) + 65,
+        tools: ['MockSlither', 'MockMythril', 'MockSemgrep']
+      }, null, 2)
+    };
+    
+    setMockResult(mockAnalysisResult);
+    setIsMockScanning(false);
+    
+    // Call the parent onScan function if provided
+    if (onScan) {
+      onScan(mockAnalysisResult);
+    }
+  };
   return (
     <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
       {/* Header */}
@@ -132,14 +258,15 @@ export default function EnhancedAuditToolPro() {
     loadScannerInfo();
   }, []);
 
-  // Process URL parameters with debouncing
+  // Process URL parameters with debouncing - Fixed version
   useEffect(() => {
-    if (router.query.address && !requestInProgress) {
+    if (router.isReady && router.query.address && !requestInProgress) {
       const queryAddress = router.query.address;
       const queryNetwork = router.query.network || 'linea';
       
       // Only process if different from current state
       if (queryAddress !== address || queryNetwork !== network) {
+        console.log('Processing URL parameters:', { queryAddress, queryNetwork });
         setAddress(queryAddress);
         setNetwork(queryNetwork);
         
@@ -151,7 +278,7 @@ export default function EnhancedAuditToolPro() {
         return () => clearTimeout(timer);
       }
     }
-  }, [router.query.address, router.query.network]);
+  }, [router.isReady, router.query.address, router.query.network, address, network, requestInProgress]);
 
   const loadScannerInfo = async () => {
     try {
@@ -233,7 +360,10 @@ export default function EnhancedAuditToolPro() {
   };
 
   const handleAddressSubmit = async (submittedAddress, submittedNetwork) => {
-    if (!submittedAddress) return;
+    if (!submittedAddress) {
+      showError('Please enter a contract address');
+      return;
+    }
     
     // Prevent multiple simultaneous requests
     if (requestInProgress) {
@@ -241,9 +371,27 @@ export default function EnhancedAuditToolPro() {
       return;
     }
     
+    console.log('🚀 Starting contract loading process...', { submittedAddress, submittedNetwork });
+    
     setRequestInProgress(true);
     setAddress(submittedAddress);
     setNetwork(submittedNetwork);
+    
+    // Update URL to reflect current state
+    if (router.isReady) {
+      const currentQuery = router.query;
+      if (currentQuery.address !== submittedAddress || currentQuery.network !== submittedNetwork) {
+        try {
+          await router.push({
+            pathname: router.pathname,
+            query: { address: submittedAddress, network: submittedNetwork }
+          }, undefined, { shallow: true });
+        } catch (error) {
+          console.warn('Router update failed:', error);
+          // Continue with the rest of the function even if router update fails
+        }
+      }
+    }
     
     // Reset previous results
     setToolsScanResult(null);
@@ -257,35 +405,56 @@ export default function EnhancedAuditToolPro() {
     // Fetch contract info
     try {
       setIsLoadingContract(true);
+      console.log('📡 Fetching contract source from API...');
+      
       const sourceData = await ContractScannerAPI.getContractSource(
         submittedAddress, 
         submittedNetwork
       );
       
+      console.log('📡 Contract source response:', sourceData);
+      
       if (sourceData.sourceCode) {
         setContractInfo(sourceData);
         setContractSource(sourceData.sourceCode);
         setLoadingError(null);
+        showSuccess('Contract loaded successfully!');
+        console.log('✅ Contract loaded successfully');
       } else {
-        setLoadingError(sourceData.error || 'Contract source code not available. The contract may not be verified on the explorer.');
+        const errorMessage = sourceData.error || 'Contract source code not available. The contract may not be verified on the explorer.';
+        setLoadingError(errorMessage);
         setContractInfo({ 
           address: submittedAddress,
           network: submittedNetwork,
           contractName: `Contract-${submittedAddress.slice(0, 6)}`,
           compilerVersion: 'Unknown'
         });
+        showWarning('Contract source not available');
+        console.log('⚠️ Contract source not available:', errorMessage);
       }
     } catch (error) {
-      console.error('Failed to fetch contract source:', error);
+      console.error('❌ Failed to fetch contract source:', error);
       setLoadingError(error.message);
       setContractInfo({ 
         error: error.message,
         address: submittedAddress,
         network: submittedNetwork
       });
+      showError('Failed to load contract: ' + error.message);
     } finally {
       setIsLoadingContract(false);
       setRequestInProgress(false);
+      console.log('🏁 Contract loading process finished');
+    }
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    if (address.trim()) {
+      console.log('📝 Form submitted with address:', address.trim());
+      await handleAddressSubmit(address.trim(), network);
+    } else {
+      showError('Please enter a contract address');
     }
   };
 
@@ -365,7 +534,8 @@ export default function EnhancedAuditToolPro() {
     }
   };
 
-  const isLoading = isLoadingContract || isToolsScanning || isAIScanning;
+  // Remove the problematic general isLoading variable that was causing conflicts
+  // const isLoading = isLoadingContract || isToolsScanning || isAIScanning;
 
   return (
     <Layout>
@@ -391,7 +561,7 @@ export default function EnhancedAuditToolPro() {
             Professional-grade security analysis with premium AI models (Multiple Advanced Models + Supervisor) and comprehensive reporting
           </p>
         </div>
-
+        
         {/* ENHANCED Contract Input Card */}
         <div className="bg-gradient-to-br from-white to-purple-50 rounded-2xl shadow-xl border border-purple-200 p-8 mb-12">
           <div className="max-w-4xl mx-auto">
@@ -406,12 +576,7 @@ export default function EnhancedAuditToolPro() {
               </p>
             </div>
             
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              if (address.trim()) {
-                handleAddressSubmit(address.trim(), network);
-              }
-            }} className="space-y-6">
+            <form onSubmit={handleFormSubmit} className="space-y-6">
               {/* Enhanced Network Selection */}
               <div className="flex justify-center mb-6">
                 <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-6 border border-purple-200">
@@ -427,7 +592,7 @@ export default function EnhancedAuditToolPro() {
                           ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg'
                           : 'bg-white text-gray-700 border border-gray-200 hover:border-green-300 hover:bg-green-50'
                       }`}
-                      disabled={isLoading}
+                      disabled={isLoadingContract}
                     >
                       <div className="flex items-center justify-center">
                         <span className="mr-2">🟢</span>
@@ -465,7 +630,7 @@ export default function EnhancedAuditToolPro() {
                     value={address}
                     onChange={(e) => handleAddressChange(e.target.value)}
                     className="w-full px-4 py-4 text-lg border-2 border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-white shadow-sm"
-                    disabled={isLoading}
+                    disabled={isLoadingContract}
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                     <svg className="h-5 w-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -475,11 +640,22 @@ export default function EnhancedAuditToolPro() {
                 </div>
               </div>
 
+              {/* Debug info for development */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="text-xs text-gray-500 text-center">
+                  Debug: Address="{address}" | Loading={isLoadingContract.toString()} | Button Enabled={(!address.trim() || isLoadingContract) ? 'false' : 'true'}
+                </div>
+              )}
+              
               {/* Load Button */}
               <button
                 type="submit"
-                disabled={!address.trim() || isLoading}
-                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 transform hover:scale-105 disabled:transform-none shadow-lg hover:shadow-xl"
+                disabled={!address.trim() || isLoadingContract}
+                className={`w-full font-semibold py-4 px-6 rounded-xl transition-all duration-200 transform shadow-lg ${
+                  !address.trim() || isLoadingContract
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white hover:scale-105 hover:shadow-xl'
+                }`}
               >
                 {isLoadingContract ? (
                   <div className="flex items-center justify-center">
@@ -504,12 +680,15 @@ export default function EnhancedAuditToolPro() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => {
-                    setAddress('0x2d8879046f1559e53eb052e949e9544bcb72f414');
+                  onClick={async () => {
+                    const testAddress = '0x2d8879046f1559e53eb052e949e9544bcb72f414';
+                    setAddress(testAddress);
                     setNetwork('linea');
+                    // Trigger the form submission
+                    await handleAddressSubmit(testAddress, 'linea');
                   }}
                   className="text-left p-4 rounded-lg border-2 border-dashed border-green-200 hover:border-green-400 hover:bg-green-50 transition-all duration-200 group"
-                  disabled={isLoading}
+                  disabled={isLoadingContract}
                 >
                   <div className="flex items-center mb-2">
                     <span className="mr-2">🟢</span>
@@ -519,12 +698,15 @@ export default function EnhancedAuditToolPro() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setAddress('0x176211869cA2b568f2A7D4EE941E073a821EE1ff');
+                  onClick={async () => {
+                    const testAddress = '0x176211869cA2b568f2A7D4EE941E073a821EE1ff';
+                    setAddress(testAddress);
                     setNetwork('linea');
+                    // Trigger the form submission
+                    await handleAddressSubmit(testAddress, 'linea');
                   }}
                   className="text-left p-4 rounded-lg border-2 border-dashed border-blue-200 hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 group"
-                  disabled={isLoading}
+                  disabled={isLoadingContract}
                 >
                   <div className="flex items-center mb-2">
                     <span className="mr-2">🟢</span>
@@ -600,8 +782,12 @@ export default function EnhancedAuditToolPro() {
         {/* Analysis Options - Only show when contract is loaded */}
         {contractSource && !loadingError && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-            {/* Premium Tools Analysis - Empty for now */}
-            <ToolsScanCardPro />
+            {/* Mock Static Analysis Tools */}
+            <MockStaticToolsCard 
+              contractSource={contractSource}
+              contractInfo={contractInfo}
+              onScan={handleToolsScan}
+            />
 
             {/* Premium AI Analysis */}
             <AIScanCardPremium
@@ -617,11 +803,13 @@ export default function EnhancedAuditToolPro() {
 
         {/* Results Section */}
         {(toolsScanResult || aiScanResult) && (
-          <EnhancedScanResults
-            toolsResult={toolsScanResult}
-            aiResult={aiScanResult}
-            contractInfo={contractInfo}
-          />
+          <div data-results-section>
+            <EnhancedScanResults
+              toolsResult={toolsScanResult}
+              aiResult={aiScanResult}
+              contractInfo={contractInfo}
+            />
+          </div>
         )}
 
         {/* ENHANCED: Premium Security Analysis Summary */}

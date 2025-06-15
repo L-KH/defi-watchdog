@@ -1,0 +1,120 @@
+// scripts/test-contract-validation.js
+const hre = require("hardhat");
+
+async function main() {
+  console.log("🧪 Testing Contract Address Validation...");
+  
+  const contractAddress = process.env.NEXT_PUBLIC_AUDIT_NFT_CONTRACT || 
+                         '0x46E086aac77023AD6E1EA65cC23A6f0Fa91Cf118';
+  
+  console.log("📍 Contract Address:", contractAddress);
+  console.log("🌐 Network:", hre.network.name);
+  
+  // Get signers
+  const signers = await hre.ethers.getSigners();
+  const deployer = signers[0];
+  
+  console.log("👤 Deployer:", deployer.address);
+  
+  // Get contract instance
+  const DeFiWatchdogAuditNFT = await hre.ethers.getContractFactory("DeFiWatchdogAuditNFT");
+  const contract = DeFiWatchdogAuditNFT.attach(contractAddress);
+  
+  // Test addresses to check
+  const testAddresses = [
+    {
+      name: "Contract itself (has code)",
+      address: contractAddress
+    },
+    {
+      name: "Deployer wallet (EOA - no code)", 
+      address: deployer.address
+    },
+    {
+      name: "Sepolia LINK Token (has code)",
+      address: "0x779877A7B0D9E8603169DdbD7836e478b4624789"
+    },
+    {
+      name: "Random address (no code)",
+      address: "0x1234567890123456789012345678901234567890"
+    },
+    {
+      name: "Generated timestamp address",
+      address: (() => {
+        const timestamp = Date.now().toString(16);
+        const padding = '0'.repeat(40 - timestamp.length);
+        return '0x' + timestamp + padding;
+      })()
+    }
+  ];
+  
+  console.log("\n🔍 Testing Address Validation...");
+  
+  for (const testCase of testAddresses) {
+    console.log(`\n--- Testing: ${testCase.name} ---`);
+    console.log(`Address: ${testCase.address}`);
+    
+    try {
+      // Check if address has code
+      const code = await hre.ethers.provider.getCode(testCase.address);
+      const hasCode = code !== '0x';
+      console.log(`Has code: ${hasCode ? 'Yes' : 'No'} (${code.length - 2} bytes)`);
+      
+      // Check if certificate exists
+      const hasCert = await contract.hasCertificate(testCase.address);
+      console.log(`Has certificate: ${hasCert ? 'Yes' : 'No'}`);
+      
+      // Try to mint (dry run simulation)
+      if (!hasCert) {
+        try {
+          console.log("🔄 Testing mint call (estimate only)...");
+          
+          const gasEstimate = await contract.estimateGas.mintStaticAuditReport(
+            testCase.address,
+            "Test Contract",
+            "QmTestHash123456789",
+            75, // security score
+            0   // LOW risk
+          );
+          
+          console.log(`✅ Mint would succeed! Gas estimate: ${gasEstimate.toString()}`);
+          
+        } catch (mintError) {
+          console.log(`❌ Mint would fail: ${mintError.message}`);
+          
+          // Check specific error types
+          if (mintError.message.includes('Address is not a contract')) {
+            console.log('   → Contract requires deployed bytecode');
+          } else if (mintError.message.includes('Certificate already exists')) {
+            console.log('   → Certificate already exists for this address');
+          } else {
+            console.log('   → Unknown validation error');
+          }
+        }
+      } else {
+        console.log('⚠️ Certificate already exists - skipping mint test');
+      }
+      
+    } catch (error) {
+      console.log(`❌ Test failed: ${error.message}`);
+    }
+  }
+  
+  console.log("\n📊 Summary:");
+  console.log("==============");
+  console.log("✅ For successful minting, addresses need:");
+  console.log("   1. Valid Ethereum address format");
+  console.log("   2. No existing certificate");
+  console.log("   3. Deployed contract bytecode (if required by contract)");
+  console.log("\n💡 Use addresses with deployed code for best results!");
+}
+
+main()
+  .then(() => {
+    console.log("\n🎉 Validation test completed!");
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error("❌ Validation test failed:", error);
+    process.exit(1);
+  });

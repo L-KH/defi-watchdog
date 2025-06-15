@@ -1,0 +1,100 @@
+// Test script for payment contract
+const hre = require("hardhat");
+
+async function main() {
+  console.log("🧪 Testing AuditPayment contract...");
+  
+  const [owner, user1, user2] = await hre.ethers.getSigners();
+  
+  // Deploy contract
+  const AuditPayment = await hre.ethers.getContractFactory("AuditPayment");
+  const auditPayment = await AuditPayment.deploy();
+  await auditPayment.deployed();
+  
+  console.log("✅ Contract deployed to:", auditPayment.address);
+  console.log("📊 Audit Price:", hre.ethers.utils.formatEther(await auditPayment.AUDIT_PRICE()), "ETH");
+  
+  // Test 1: Request an audit
+  console.log("\n🔄 Test 1: Requesting audit...");
+  const testContract = "0x742d35Cc6634C0532925a3b844Bc9e7195Ed5E56";
+  const testName = "Test Token Contract";
+  
+  const tx1 = await auditPayment.connect(user1).requestAudit(
+    testContract,
+    testName,
+    { value: hre.ethers.utils.parseEther("0.003") }
+  );
+  
+  const receipt1 = await tx1.wait();
+  const event = receipt1.events?.find(e => e.event === 'AuditPaid');
+  const requestId = event?.args?.requestId;
+  
+  console.log("✅ Audit requested! Request ID:", requestId.toString());
+  
+  // Test 2: Check audit details
+  console.log("\n🔄 Test 2: Checking audit details...");
+  const auditDetails = await auditPayment.auditRequests(requestId);
+  console.log("📋 Audit Details:");
+  console.log("   User:", auditDetails.user);
+  console.log("   Contract:", auditDetails.contractToAudit);
+  console.log("   Name:", auditDetails.contractName);
+  console.log("   Paid:", hre.ethers.utils.formatEther(auditDetails.paidAmount), "ETH");
+  console.log("   Completed:", auditDetails.completed);
+  
+  // Test 3: Get user history
+  console.log("\n🔄 Test 3: Getting user history...");
+  const userRequests = await auditPayment.getUserRequests(user1.address);
+  console.log("📜 User has", userRequests.length, "audit requests");
+  
+  const userHistory = await auditPayment.getUserAuditHistory(user1.address);
+  console.log("📊 User history retrieved with", userHistory.length, "entries");
+  
+  // Test 4: Complete audit (as owner)
+  console.log("\n🔄 Test 4: Completing audit...");
+  const mockIPFSHash = "QmYwAPJzv5CZsnA625s3Xf2nemtYgPpHdWEz79ojWnPbdG";
+  const securityScore = 85;
+  const riskLevel = "Low";
+  
+  const tx2 = await auditPayment.completeAudit(
+    requestId,
+    mockIPFSHash,
+    securityScore,
+    riskLevel
+  );
+  await tx2.wait();
+  
+  console.log("✅ Audit completed!");
+  
+  // Test 5: Verify completion
+  console.log("\n🔄 Test 5: Verifying completion...");
+  const completedAudit = await auditPayment.auditRequests(requestId);
+  console.log("📋 Completed Audit:");
+  console.log("   IPFS Hash:", completedAudit.reportIPFSHash);
+  console.log("   Security Score:", completedAudit.securityScore.toString());
+  console.log("   Risk Level:", completedAudit.riskLevel);
+  console.log("   Completed:", completedAudit.completed);
+  
+  // Test 6: Check contract balance
+  console.log("\n🔄 Test 6: Checking contract balance...");
+  const balance = await auditPayment.getBalance();
+  console.log("💰 Contract balance:", hre.ethers.utils.formatEther(balance), "ETH");
+  
+  // Test 7: Withdraw funds (as owner)
+  console.log("\n🔄 Test 7: Withdrawing funds...");
+  const ownerBalanceBefore = await owner.getBalance();
+  const tx3 = await auditPayment.withdraw();
+  await tx3.wait();
+  const ownerBalanceAfter = await owner.getBalance();
+  
+  console.log("✅ Funds withdrawn!");
+  console.log("   Contract balance after:", hre.ethers.utils.formatEther(await auditPayment.getBalance()), "ETH");
+  
+  console.log("\n🎉 All tests passed!");
+}
+
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

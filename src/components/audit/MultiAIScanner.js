@@ -56,7 +56,8 @@ function useMultiAIScanner({
   contractSource, 
   contractInfo, 
   onComplete,
-  onProgress
+  onProgress,
+  requestId // Add requestId for payment tracking
 }) {
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState({});
@@ -483,6 +484,36 @@ function useMultiAIScanner({
           currentModels: [],
           apiCompleted: true
         });
+      }
+      
+      // Submit audit completion if we have a request ID
+      if (requestId && finalResults.success) {
+        try {
+          console.log('📤 Submitting audit completion for request', requestId);
+          const completionResponse = await fetch('/api/complete-audit', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              requestId,
+              report: finalResults,
+              securityScore: finalResults.analysis.securityScore || 0,
+              riskLevel: finalResults.analysis.riskLevel || 'Unknown',
+              contractAddress: contractInfo.address,
+              contractName: contractInfo.contractName
+            })
+          });
+          
+          if (completionResponse.ok) {
+            const completionData = await completionResponse.json();
+            console.log('✅ Audit completion submitted:', completionData);
+            finalResults.ipfsHash = completionData.ipfsHash;
+            finalResults.reportUrl = completionData.reportUrl;
+          }
+        } catch (error) {
+          console.error('Failed to submit audit completion:', error);
+        }
       }
       
       if (onComplete) {

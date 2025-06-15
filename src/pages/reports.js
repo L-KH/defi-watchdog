@@ -1,5 +1,6 @@
 import Head from 'next/head';
 import Layout from '../components/layout/Layout';
+import UserAuditHistory from '../components/audit/UserAuditHistory';
 
 export default function Reports() {
   const sampleReports = [
@@ -116,8 +117,20 @@ export default function Reports() {
           </div>
         </section>
 
-        {/* Sample Reports Grid */}
+        {/* User Audit History */}
         <section className="py-20 bg-white">
+          <div className="container mx-auto px-6">
+            <div className="max-w-6xl mx-auto">
+              <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
+                Your Audit History
+              </h2>
+              <UserAuditHistory />
+            </div>
+          </div>
+        </section>
+
+        {/* Sample Reports Grid */}
+        <section className="py-20 bg-gray-50">
           <div className="container mx-auto px-6">
             <div className="max-w-6xl mx-auto">
               <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
@@ -184,7 +197,7 @@ export default function Reports() {
         </section>
 
         {/* Report Features */}
-        <section className="py-20 bg-gray-50">
+        <section className="py-20 bg-white">
           <div className="container mx-auto px-6">
             <div className="max-w-6xl mx-auto">
               <div className="text-center mb-16">
@@ -211,7 +224,7 @@ export default function Reports() {
         </section>
 
         {/* Report Formats */}
-        <section className="py-20 bg-white">
+        <section className="py-20 bg-gray-50">
           <div className="container mx-auto px-6">
             <div className="max-w-4xl mx-auto">
               <div className="text-center mb-16">

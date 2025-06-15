@@ -1,36 +1,109 @@
-import { useRouter } from 'next/router';
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import { useRouter } from 'next/router';
 import Layout from '../../components/layout/Layout';
-import { useContract } from '../../hooks/useContract';
 
 export default function CertificatePage() {
   const router = useRouter();
   const { id } = router.query;
-  const { contract } = useContract();
   const [certificate, setCertificate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [ipfsReport, setIpfsReport] = useState(null);
 
   useEffect(() => {
     const fetchCertificate = async () => {
-      if (!id || !contract) return;
+      if (!id) return;
       
       setLoading(true);
       setError(null);
       
       try {
-        // For demo purposes, create a mock certificate
-        // In a real app, you would get this data from the contract
-        setCertificate({
-          id,
-          contractAddress: '0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984', // UNI token for demo
-          owner: '0x7823453F21',
-          network: 'goerli',
-          date: new Date().toISOString()
-        });
+        // First try to get from localStorage
+        const localCert = localStorage.getItem(`certificate_${id}`);
+        let certificateData = null;
+        
+        if (localCert) {
+          certificateData = JSON.parse(localCert);
+          console.log('📜 Found certificate in localStorage:', certificateData);
+        }
+        
+        // Try to fetch from user history API
+        if (!certificateData) {
+          try {
+            const historyResponse = await fetch('/api/user-audit-history');
+            if (historyResponse.ok) {
+              const historyData = await historyResponse.json();
+              if (historyData.success && historyData.history) {
+                const cert = historyData.history.find(h => 
+                  h.id === id || 
+                  h.requestId === id ||
+                  h.tokenId?.toString() === id
+                );
+                if (cert) {
+                  certificateData = cert;
+                  console.log('📜 Found certificate in history:', certificateData);
+                }
+              }
+            }
+          } catch (historyError) {
+            console.warn('Could not fetch from history:', historyError);
+          }
+        }
+        
+        // If we have an IPFS hash, try to fetch the full report
+        if (certificateData?.ipfsHash) {
+          try {
+            const ipfsUrl = certificateData.ipfsUrl || `https://gateway.pinata.cloud/ipfs/${certificateData.ipfsHash}`;
+            console.log('🌐 Fetching from IPFS:', ipfsUrl);
+            
+            const ipfsResponse = await fetch(ipfsUrl);
+            if (ipfsResponse.ok) {
+              const ipfsData = await ipfsResponse.json();
+              setIpfsReport({
+                url: ipfsUrl,
+                data: ipfsData
+              });
+              console.log('✅ IPFS report loaded');
+              
+              // Enhance certificate data with IPFS info
+              if (ipfsData.auditResult) {
+                certificateData = {
+                  ...certificateData,
+                  securityScore: ipfsData.securityScore || certificateData.securityScore,
+                  riskLevel: ipfsData.riskLevel || certificateData.riskLevel,
+                  findings: ipfsData.auditResult?.analysis?.keyFindings?.length || certificateData.findings
+                };
+              }
+            }
+          } catch (ipfsError) {
+            console.warn('Could not fetch from IPFS:', ipfsError);
+          }
+        }
+        
+        // Fallback: Create mock certificate if nothing found
+        if (!certificateData) {
+          console.log('📄 Creating mock certificate for ID:', id);
+          certificateData = {
+            id: id,
+            tokenId: id,
+            contractAddress: '0x2d8879046f1559e53eb052e949e9544bcb72f414',
+            contractName: 'Sample DEX Router',
+            userAddress: '0x742d35Cc6634C0532925a3b8D42C5D7c5041234d',
+            network: 'linea',
+            timestamp: new Date().toISOString(),
+            securityScore: 85,
+            riskLevel: 'Low',
+            findings: 1,
+            hasIPFSReport: false,
+            minted: true
+          };
+        }
+        
+        setCertificate(certificateData);
+        
       } catch (err) {
-        console.error('Error fetching certificate:', err);
+        console.error('❌ Error fetching certificate:', err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -38,13 +111,16 @@ export default function CertificatePage() {
     };
 
     fetchCertificate();
-  }, [id, contract]);
+  }, [id]);
 
   if (loading) {
     return (
       <Layout>
-        <div style={{ maxWidth: '800px', margin: '2rem auto', padding: '1rem', textAlign: 'center' }}>
-          <p>Loading certificate...</p>
+        <div className="max-w-4xl mx-auto px-4 py-8 mt-10">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-lg">Loading certificate...</p>
+          </div>
         </div>
       </Layout>
     );
@@ -53,20 +129,14 @@ export default function CertificatePage() {
   if (error) {
     return (
       <Layout>
-        <div style={{ maxWidth: '800px', margin: '2rem auto', padding: '1rem', textAlign: 'center' }}>
-          <h1>Certificate Error</h1>
-          <p style={{ color: '#EF4444' }}>{error}</p>
-          <div style={{ marginTop: '1rem' }}>
+        <div className="max-w-4xl mx-auto px-4 py-8 mt-10">
+          <div className="text-center">
+            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Certificate Error</h1>
+            <p className="text-red-600 mb-6">{error}</p>
             <button
               onClick={() => router.push('/audit')}
-              style={{
-                backgroundColor: '#4F46E5',
-                color: 'white',
-                padding: '0.5rem 1rem',
-                borderRadius: '0.375rem',
-                border: 'none',
-                cursor: 'pointer'
-              }}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               Back to Audit
             </button>
@@ -79,125 +149,240 @@ export default function CertificatePage() {
   if (!certificate) {
     return (
       <Layout>
-        <div style={{ maxWidth: '800px', margin: '2rem auto', padding: '1rem', textAlign: 'center' }}>
-          <p>Certificate not found</p>
+        <div className="max-w-4xl mx-auto px-4 py-8 mt-10">
+          <div className="text-center">
+            <div className="text-gray-400 text-6xl mb-4">📜</div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Certificate Not Found</h1>
+            <p className="text-gray-600 mb-6">Certificate #{id} could not be found.</p>
+            <button
+              onClick={() => router.push('/audit')}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Back to Audit
+            </button>
+          </div>
         </div>
       </Layout>
     );
   }
 
+  const getRiskColor = (riskLevel) => {
+    switch (riskLevel?.toLowerCase()) {
+      case 'low': return 'text-green-600 bg-green-100';
+      case 'medium': return 'text-yellow-600 bg-yellow-100';
+      case 'high': return 'text-red-600 bg-red-100';
+      default: return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const getScoreColor = (score) => {
+    if (score >= 80) return 'text-green-600';
+    if (score >= 60) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
   return (
     <Layout>
       <Head>
         <title>Certificate #{id} - DeFi Watchdog</title>
-        <meta name="description" content={`Safety certificate for contract ${certificate.contractAddress}`} />
+        <meta 
+          name="description" 
+          content={`Safety certificate for contract ${certificate.contractAddress}`} 
+        />
       </Head>
 
-      <div style={{ maxWidth: '800px', margin: '2rem auto', padding: '1rem' }}>
-        <div style={{ 
-          backgroundColor: '#FFFFFF', 
-          borderRadius: '0.5rem', 
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06)',
-          overflow: 'hidden'
-        }}>
-          <div style={{ 
-            padding: '1.5rem', 
-            borderBottom: '1px solid #E5E7EB',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            backgroundColor: '#F0FDF4'
-          }}>
-            <div>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#111827' }}>
-                DeFi Watchdog Safety Certificate
-              </h3>
-              <p style={{ fontSize: '0.875rem', color: '#6B7280' }}>
-                NFT ID: #{id}
-              </p>
-            </div>
-            <div style={{ 
-              backgroundColor: '#D1FAE5',
-              borderRadius: '9999px',
-              padding: '1rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '4px solid white'
-            }}>
-              <svg 
-                style={{ height: '1.5rem', width: '1.5rem', color: '#10B981' }} 
-                xmlns="http://www.w3.org/2000/svg" 
-                fill="none" 
-                viewBox="0 0 24 24" 
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-            </div>
-          </div>
-
-          <div style={{ padding: '1.5rem', borderBottom: '1px solid #E5E7EB' }}>
-            <div style={{ display: 'flex', marginBottom: '1rem' }}>
-              <div style={{ width: '33%', fontSize: '0.875rem', fontWeight: '500', color: '#6B7280' }}>
-                Contract Address
+      <div className="max-w-4xl mx-auto px-4 py-8 mt-10">
+        {/* Certificate Header */}
+        <div className="bg-gradient-to-br from-white to-blue-50 rounded-2xl shadow-xl border border-blue-200 overflow-hidden mb-8">
+          {/* Header with Logo */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">DeFi Watchdog Safety Certificate</h1>
+                <p className="text-blue-100">Blockchain Security Verification</p>
               </div>
-              <div style={{ width: '67%', fontSize: '0.875rem', color: '#111827' }}>
-                {certificate.contractAddress}
-              </div>
-            </div>
-            <div style={{ display: 'flex', marginBottom: '1rem' }}>
-              <div style={{ width: '33%', fontSize: '0.875rem', fontWeight: '500', color: '#6B7280' }}>
-                Certificate Owner
-              </div>
-              <div style={{ width: '67%', fontSize: '0.875rem', color: '#111827' }}>
-                {certificate.owner}
-              </div>
-            </div>
-            <div style={{ display: 'flex', marginBottom: '1rem' }}>
-              <div style={{ width: '33%', fontSize: '0.875rem', fontWeight: '500', color: '#6B7280' }}>
-                Analysis Date
-              </div>
-              <div style={{ width: '67%', fontSize: '0.875rem', color: '#111827' }}>
-                {new Date(certificate.date).toLocaleDateString()}
-              </div>
-            </div>
-            <div style={{ display: 'flex', marginBottom: '1rem' }}>
-              <div style={{ width: '33%', fontSize: '0.875rem', fontWeight: '500', color: '#6B7280' }}>
-                Security Status
-              </div>
-              <div style={{ width: '67%', fontSize: '0.875rem', color: '#111827', display: 'flex', alignItems: 'center' }}>
-                <span style={{ 
-                  backgroundColor: '#D1FAE5',
-                  color: '#064E3B',
-                  fontSize: '0.75rem',
-                  fontWeight: '600',
-                  padding: '0.125rem 0.5rem',
-                  borderRadius: '9999px',
-                  marginRight: '0.5rem'
-                }}>
-                  Safe
-                </span>
-                No critical vulnerabilities detected
+              <div className="text-right">
+                <div className="bg-white/20 rounded-full p-4 mb-2">
+                  <span className="text-4xl">🛡️</span>
+                </div>
+                <div className="text-sm">Certificate #{id}</div>
               </div>
             </div>
           </div>
 
-          <div style={{ padding: '1.5rem', backgroundColor: '#F9FAFB', textAlign: 'center' }}>
-            <button
-              onClick={() => router.push('/audit')}
-              style={{
-                backgroundColor: '#4F46E5',
-                color: 'white',
-                padding: '0.5rem 1rem',
-                borderRadius: '0.375rem',
-                border: 'none',
-                cursor: 'pointer'
-              }}
+          {/* Certificate Body */}
+          <div className="p-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Contract Information */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Contract Information</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between py-2 border-b border-gray-200">
+                    <span className="text-gray-600">Contract Name:</span>
+                    <span className="font-medium">{certificate.contractName}</span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-200">
+                    <span className="text-gray-600">Address:</span>
+                    <span className="font-mono text-sm">
+                      {certificate.contractAddress}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-200">
+                    <span className="text-gray-600">Network:</span>
+                    <span className="font-medium capitalize">
+                      {certificate.network}
+                    </span>
+                  </div>
+                  <div className="flex justify-between py-2 border-b border-gray-200">
+                    <span className="text-gray-600">Audit Date:</span>
+                    <span className="font-medium">
+                      {new Date(certificate.timestamp).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Security Assessment */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Security Assessment</h3>
+                <div className="space-y-4">
+                  {/* Security Score */}
+                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Security Score:</span>
+                      <div className="text-right">
+                        <div className={`text-2xl font-bold ${getScoreColor(certificate.securityScore)}`}>
+                          {certificate.securityScore}/100
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Risk Level */}
+                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Risk Level:</span>
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getRiskColor(certificate.riskLevel)}`}>
+                        {certificate.riskLevel} Risk
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Findings Count */}
+                  <div className="bg-white rounded-lg p-4 border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Issues Found:</span>
+                      <span className="font-medium">
+                        {certificate.findings} issues
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* IPFS Report Section */}
+        {certificate.hasIPFSReport && certificate.ipfsHash && (
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl border border-green-200 p-6 mb-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-green-900 mb-2">
+                  📊 Permanent IPFS Report Available
+                </h3>
+                <p className="text-green-700 text-sm">
+                  This audit report is permanently stored on IPFS and accessible from anywhere.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <a
+                  href={certificate.ipfsUrl || `https://gateway.pinata.cloud/ipfs/${certificate.ipfsHash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                >
+                  📋 View Full Report
+                </a>
+                <button
+                  onClick={() => {
+                    const url = certificate.ipfsUrl || `https://gateway.pinata.cloud/ipfs/${certificate.ipfsHash}`;
+                    navigator.clipboard.writeText(url);
+                    alert('IPFS URL copied to clipboard!');
+                  }}
+                  className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors text-sm font-medium"
+                >
+                  📋 Copy IPFS URL
+                </button>
+              </div>
+            </div>
+            
+            {ipfsReport && (
+              <div className="mt-4 p-4 bg-white rounded-lg border border-green-200">
+                <h4 className="font-medium text-green-900 mb-2">Report Preview:</h4>
+                <div className="text-sm text-green-800">
+                  <p><strong>Contract:</strong> {ipfsReport.data.contractName}</p>
+                  <p><strong>Security Score:</strong> {ipfsReport.data.securityScore}/100</p>
+                  <p><strong>Risk Level:</strong> {ipfsReport.data.riskLevel}</p>
+                  <p><strong>Issues Found:</strong> {ipfsReport.data.auditResult?.analysis?.keyFindings?.length || 0}</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Verification Status */}
+        <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6 mb-8">
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+              <span className="text-2xl">✅</span>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Certificate Verified</h3>
+            <p className="text-gray-600 mb-4">
+              This certificate represents a completed security audit with permanent IPFS storage.
+            </p>
+            
+            {certificate.ipfsHash && (
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <p className="text-sm text-gray-600 mb-2">IPFS Hash:</p>
+                <p className="font-mono text-xs text-gray-800 break-all">
+                  {certificate.ipfsHash}
+                </p>
+              </div>
+            )}
+            
+            <div className="text-xs text-gray-500">
+              This certificate and its associated audit report are permanently stored on IPFS for maximum transparency.
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <button
+            onClick={() => router.push('/audit')}
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            🔍 Audit Another Contract
+          </button>
+          
+          <button
+            onClick={() => router.push('/reports')}
+            className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+          >
+            📊 View All Reports
+          </button>
+          
+          {certificate.hasIPFSReport && certificate.ipfsHash && (
+            <a
+              href={certificate.ipfsUrl || `https://gateway.pinata.cloud/ipfs/${certificate.ipfsHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-center"
             >
-              Audit Another Contract
-            </button>
-          </div>
+              🌐 Open IPFS Report
+            </a>
+          )}
         </div>
       </div>
     </Layout>

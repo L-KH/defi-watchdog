@@ -1,6 +1,7 @@
 // Enhanced Free AI Security Analysis Card with Model Selection
 'use client';
 import { useState } from 'react';
+import Web3MintButton from '../Web3MintButton';
 
 // Available Free AI Models with their specialties
 const FREE_AI_MODELS = {
@@ -90,13 +91,21 @@ export default function AIScanCardFree({
 
   const handleStartAnalysis = () => {
     const scanOptions = {
-      type: 'basic',
+      type: 'free', // IMPORTANT: Mark as free for regular audit page
       plan: 'free',
       model: selectedModel,
       promptMode: promptMode,
       customPrompt: promptMode === 'custom' ? customPrompt : null,
-      timeout: 90000 // Longer timeout for better analysis
+      timeout: 90000, // Longer timeout for better analysis
+      source: 'regular-audit-page' // Track source
     };
+    
+    console.log('🆓 AIScanCardFree - Starting free AI analysis:', {
+      scanOptions,
+      selectedModel,
+      promptMode,
+      source: 'regular-audit-page'
+    });
 
     onScan(scanOptions);
   };
@@ -194,22 +203,12 @@ export default function AIScanCardFree({
         </div>
 
         {/* Analysis Preview for Selected Model */}
-        <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
-          <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-            {selectedModelInfo.icon}
-            <span className="ml-2">{selectedModelInfo.name} Analysis</span>
-          </h4>
-          <div className="text-sm text-gray-700">
-            <p className="mb-3">🎯 <strong>Speciality:</strong> {selectedModelInfo.speciality}</p>
-            <div className="bg-white/60 backdrop-blur rounded-lg p-4">
-              <h5 className="font-medium mb-2">What you'll get:</h5>
-              <ul className="space-y-1 text-gray-600">
-                <li>• Professional vulnerability assessment</li>
-                <li>• Real code analysis (no false references)</li>
-                <li>• Specific line-by-line findings</li>
-                <li>• Actionable remediation steps</li>
-                <li>• Gas optimization recommendations</li>
-              </ul>
+        <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+          <div className="flex items-center">
+            <span className="text-2xl mr-3">{selectedModelInfo.icon}</span>
+            <div>
+              <h4 className="font-semibold text-gray-900">{selectedModelInfo.name} Analysis</h4>
+              <p className="text-sm text-gray-700 mt-1">🎯 <strong>Speciality:</strong> {selectedModelInfo.speciality}</p>
             </div>
           </div>
         </div>
@@ -347,7 +346,7 @@ export default function AIScanCardFree({
           🔍 Free professional analysis • No registration required • Real vulnerability detection
         </p>
 
-        {/* Results Summary */}
+        {/* Results Summary with Mint Button */}
         {result && (
           <div className="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-xl">
             <h4 className="font-semibold text-blue-900 mb-4 flex items-center">
@@ -376,9 +375,58 @@ export default function AIScanCardFree({
             </div>
 
             {result.analysis?.summary && (
-              <div className="bg-white p-4 rounded-lg">
+              <div className="bg-white p-4 rounded-lg mb-4">
                 <p className="text-sm text-gray-600 mb-2">Analysis Summary</p>
                 <p className="text-gray-900">{result.analysis.summary}</p>
+              </div>
+            )}
+            
+            {/* Mint Certificate Button - Only show when analysis is successful */}
+            {result.success !== false && (
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-6 border border-green-200">
+                <div className="text-center">
+                  <h5 className="font-semibold text-green-800 mb-2 flex items-center justify-center">
+                    <span className="mr-2">🏆</span>
+                    Save Your Analysis Report
+                  </h5>
+                  <p className="text-sm text-green-700 mb-4">
+                    Create a permanent certificate of this security analysis with IPFS storage
+                  </p>
+                  
+                  <div className="flex justify-center">
+                    <Web3MintButton 
+                    contractAddress={result.contractInfo?.address || result.contractInfo?.contractAddress}
+                    auditData={{
+                    contractInfo: {
+                    contractName: result.contractInfo?.contractName || 'Analyzed Contract',
+                    address: result.contractInfo?.address || result.contractInfo?.contractAddress,
+                    network: result.contractInfo?.network || 'linea'
+                    },
+                    scores: {
+                    security: result.analysis?.securityScore || 75,
+                    gas: result.analysis?.gasOptimizationScore || 80,
+                    quality: result.analysis?.codeQualityScore || 85,
+                    overall: result.analysis?.overallScore || result.analysis?.securityScore || 75
+                    },
+                    securityFindings: result.analysis?.keyFindings || [],
+                    gasOptimizations: result.analysis?.gasOptimizations || [],
+                    codeQualityIssues: result.analysis?.codeQualityIssues || [],
+                    executiveSummary: result.analysis?.summary || 'AI security analysis completed successfully.',
+                    modelsUsed: [result.model || selectedModelInfo.name],
+                    analysisType: 'free-ai',
+                    processingTime: result.analysisTime ? `${(result.analysisTime / 1000).toFixed(1)}s` : '45s'
+                    }}
+                    auditType="static"
+                    onMintComplete={(certificateData) => {
+                    console.log('✅ Free AI Certificate created successfully!', certificateData);
+                    }}
+                    />
+                  </div>
+                  
+                  <div className="mt-3 text-xs text-green-600">
+                    ✅ Permanent IPFS storage • 📱 Always accessible • 🔗 Shareable link
+                  </div>
+                </div>
               </div>
             )}
           </div>

@@ -1,0 +1,71 @@
+// scripts/quick-test.js
+const hre = require("hardhat");
+
+async function main() {
+  console.log("🔍 Quick DeFi Watchdog Contract Test...");
+  
+  const contractAddress = process.env.NEXT_PUBLIC_AUDIT_NFT_CONTRACT || 
+                         '0x46E086aac77023AD6E1EA65cC23A6f0Fa91Cf118';
+  
+  console.log("📍 Contract Address:", contractAddress);
+  console.log("🌐 Network:", hre.network.name);
+  
+  try {
+    // Check if contract exists
+    const code = await hre.ethers.provider.getCode(contractAddress);
+    if (code === '0x') {
+      throw new Error('No contract found at this address');
+    }
+    
+    console.log("✅ Contract exists at address");
+    console.log("📋 Contract Code Size:", code.length - 2, "bytes");
+    
+    // Get contract instance
+    const DeFiWatchdogAuditNFT = await hre.ethers.getContractFactory("DeFiWatchdogAuditNFT");
+    const contract = DeFiWatchdogAuditNFT.attach(contractAddress);
+    
+    // Test basic function calls
+    console.log("\n📊 Testing Basic Functions:");
+    
+    const name = await contract.name();
+    console.log("✅ Contract Name:", name);
+    
+    const symbol = await contract.symbol();
+    console.log("✅ Contract Symbol:", symbol);
+    
+    const staticPrice = await contract.STATIC_AUDIT_PRICE();
+    console.log("✅ Static Price:", hre.ethers.utils.formatEther(staticPrice), "ETH");
+    
+    const aiPrice = await contract.AI_AUDIT_PRICE();
+    console.log("✅ AI Price:", hre.ethers.utils.formatEther(aiPrice), "ETH");
+    
+    const totalAudits = await contract.getTotalAudits();
+    console.log("✅ Total Audits:", totalAudits.toString());
+    
+    console.log("\n🎉 Quick test completed successfully!");
+    console.log("🎯 Contract is responsive and working correctly");
+    
+  } catch (error) {
+    console.error("❌ Quick test failed:", error.message);
+    
+    if (error.message.includes('No contract found')) {
+      console.log("💡 Contract may not be deployed to this network");
+      console.log("🔧 Try running: npm run deploy:sepolia");
+    } else {
+      console.log("💡 Contract exists but may have ABI mismatch");
+      console.log("🔧 Try recompiling: npm run compile");
+    }
+    
+    process.exit(1);
+  }
+}
+
+main()
+  .then(() => {
+    console.log("\n✅ Quick test passed!");
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error("❌ Quick test script failed:", error);
+    process.exit(1);
+  });

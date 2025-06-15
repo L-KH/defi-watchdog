@@ -1,0 +1,117 @@
+// scripts/test-web3-simple.js
+const hre = require("hardhat");
+
+async function main() {
+  console.log("🧪 Simple DeFi Watchdog Web3 Test...");
+  
+  const contractAddress = process.env.NEXT_PUBLIC_AUDIT_NFT_CONTRACT || 
+                         '0x46E086aac77023AD6E1EA65cC23A6f0Fa91Cf118';
+  
+  console.log("📍 Contract Address:", contractAddress);
+  console.log("🌐 Network:", hre.network.name);
+  
+  // Get signers
+  const signers = await hre.ethers.getSigners();
+  const deployer = signers[0];
+  
+  console.log("👤 Deployer:", deployer.address);
+  
+  // Get contract instance
+  const DeFiWatchdogAuditNFT = await hre.ethers.getContractFactory("DeFiWatchdogAuditNFT");
+  const contract = DeFiWatchdogAuditNFT.attach(contractAddress);
+  
+  try {
+    console.log("\n🔍 Testing Contract State...");
+    
+    // Test basic functions
+    const name = await contract.name();
+    const symbol = await contract.symbol();
+    const staticPrice = await contract.STATIC_AUDIT_PRICE();
+    const aiPrice = await contract.AI_AUDIT_PRICE();
+    const totalAudits = await contract.getTotalAudits();
+    const [staticCount, aiCount] = await contract.getAuditTypeStats();
+    
+    console.log("✅ Contract Name:", name);
+    console.log("✅ Contract Symbol:", symbol);
+    console.log("✅ Static Audit Price:", hre.ethers.utils.formatEther(staticPrice), "ETH");
+    console.log("✅ AI Audit Price:", hre.ethers.utils.formatEther(aiPrice), "ETH");
+    console.log("✅ Total Audits:", totalAudits.toString());
+    console.log("✅ Static Audits:", staticCount.toString());
+    console.log("✅ AI Audits:", aiCount.toString());
+    
+    // Test certificate check with a known address
+    console.log("\n🔍 Testing Certificate Checks...");
+    
+    // Use the contract's own address for testing (contracts can have certificates)
+    const testAddr1 = contractAddress;
+    const hasCert1 = await contract.hasCertificate(testAddr1);
+    console.log(`✅ Contract ${testAddr1} has certificate: ${hasCert1}`);
+    
+    // Test with deployer address
+    const testAddr2 = deployer.address;
+    const hasCert2 = await contract.hasCertificate(testAddr2);
+    console.log(`✅ Deployer ${testAddr2} has certificate: ${hasCert2}`);
+    
+    // Test user audit history
+    console.log("\n🔍 Testing User Audit History...");
+    const userAudits = await contract.getUserAudits(deployer.address);
+    console.log(`✅ Deployer has ${userAudits.length} audit(s)`);
+    
+    if (userAudits.length > 0) {
+      console.log("📋 User's audit token IDs:", userAudits.map(id => id.toString()).join(', '));
+    }
+    
+    // Test contract audit history
+    console.log("\n🔍 Testing Contract Audit History...");
+    const contractAudits = await contract.getContractAudits(contractAddress);
+    console.log(`✅ Contract has ${contractAudits.length} audit(s)`);
+    
+    // Test risk level statistics
+    console.log("\n🔍 Testing Risk Statistics...");
+    const [lowCount, mediumCount, highCount, criticalCount] = await contract.getRiskLevelStats();
+    console.log("📊 Risk Levels:");
+    console.log(`   Low: ${lowCount}`);
+    console.log(`   Medium: ${mediumCount}`);
+    console.log(`   High: ${highCount}`);
+    console.log(`   Critical: ${criticalCount}`);
+    
+    // If there are existing audits, let's examine one
+    if (totalAudits.gt(0)) {
+      console.log("\n🔍 Testing Audit Report Retrieval...");
+      try {
+        const reportData = await contract.getAuditReport(1); // Check first audit
+        console.log("✅ Successfully retrieved audit report #1:");
+        console.log(`   Contract: ${reportData[0]}`);
+        console.log(`   Auditor: ${reportData[1]}`);
+        console.log(`   Type: ${reportData[2]} (0=STATIC, 1=AI)`);
+        console.log(`   Risk: ${reportData[3]} (0=LOW, 1=MED, 2=HIGH, 3=CRIT)`);
+        console.log(`   Score: ${reportData[4]}`);
+        console.log(`   IPFS: ${reportData[5]}`);
+        console.log(`   Name: ${reportData[6]}`);
+        console.log(`   Paid: ${hre.ethers.utils.formatEther(reportData[8])} ETH`);
+      } catch (error) {
+        console.log(`⚠️ Could not retrieve audit report: ${error.message}`);
+      }
+    }
+    
+    console.log("\n✅ Simple Web3 test completed successfully!");
+    console.log("🎯 All contract functions are working correctly");
+    console.log("🚀 Ready for minting integration!");
+    
+  } catch (error) {
+    console.error("❌ Simple Web3 test failed:", error.message);
+    console.error("Stack trace:", error.stack);
+    process.exit(1);
+  }
+}
+
+main()
+  .then(() => {
+    console.log("\n🎉 All tests passed successfully!");
+    console.log("💡 The contract is ready for frontend integration");
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error("❌ Test suite failed:", error);
+    process.exit(1);
+  });

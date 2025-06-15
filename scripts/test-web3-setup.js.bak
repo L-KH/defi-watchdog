@@ -1,0 +1,124 @@
+// scripts/test-web3-setup.js - Test Web3 Integration
+const { ethers } = require('hardhat');
+
+async function testWeb3Setup() {
+  console.log('🧪 Testing DeFi Watchdog Web3 Setup');
+  console.log('====================================');
+
+  try {
+    // Test 1: Network connection
+    console.log('\n1️⃣ Testing Network Connection...');
+    const network = await ethers.provider.getNetwork();
+    console.log(`✅ Connected to: ${network.name} (${network.chainId})`);
+
+    if (network.chainId !== 11155111) {
+      console.log('⚠️ Not on Sepolia - run with --network sepolia');
+    }
+
+    // Test 2: Account access
+    console.log('\n2️⃣ Testing Account Access...');
+    const [deployer] = await ethers.getSigners();
+    const balance = await deployer.getBalance();
+    console.log(`✅ Deployer: ${deployer.address}`);
+    console.log(`✅ Balance: ${ethers.utils.formatEther(balance)} ETH`);
+
+    // Test 3: Contract compilation
+    console.log('\n3️⃣ Testing Contract Compilation...');
+    const DeFiWatchdogAuditNFT = await ethers.getContractFactory('DeFiWatchdogAuditNFT');
+    console.log('✅ Contract compiled successfully');
+
+    // Test 4: Environment variables
+    console.log('\n4️⃣ Testing Environment Variables...');
+    const requiredVars = [
+      'SEPOLIA_RPC_URL',
+      'PRIVATE_KEY',
+      'NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID',
+      'PINATA_API_KEY'
+    ];
+
+    requiredVars.forEach(varName => {
+      const value = process.env[varName];
+      if (value) {
+        console.log(`✅ ${varName}: ${'*'.repeat(10)}${value.slice(-4)}`);
+      } else {
+        console.log(`❌ ${varName}: Missing`);
+      }
+    });
+
+    // Test 5: Check if contract is deployed
+    console.log('\n5️⃣ Testing Deployed Contract...');
+    const contractAddress = process.env.NEXT_PUBLIC_AUDIT_NFT_CONTRACT;
+    
+    if (contractAddress && contractAddress !== '0x449a12495A524fC7EA7A37a26b13d55911e51344') {
+      try {
+        const code = await ethers.provider.getCode(contractAddress);
+        if (code !== '0x') {
+          console.log(`✅ Contract deployed at: ${contractAddress}`);
+          
+          // Try to call contract
+          const contract = new ethers.Contract(contractAddress, [
+            'function name() view returns (string)',
+            'function symbol() view returns (string)'
+          ], ethers.provider);
+          
+          const name = await contract.name();
+          const symbol = await contract.symbol();
+          console.log(`✅ Contract name: ${name}`);
+          console.log(`✅ Contract symbol: ${symbol}`);
+        } else {
+          console.log(`❌ No contract at: ${contractAddress}`);
+        }
+      } catch (error) {
+        console.log(`❌ Contract test failed: ${error.message}`);
+      }
+    } else {
+      console.log('❌ Contract not deployed or using old address');
+      console.log('💡 Run: npm run fix-web3');
+    }
+
+    console.log('\n🎯 Test Summary');
+    console.log('===============');
+    if (network.chainId === 11155111 && balance.gt(ethers.utils.parseEther('0.005'))) {
+      console.log('✅ Ready to deploy contract');
+    } else {
+      console.log('⚠️ Need Sepolia ETH or wrong network');
+    }
+
+    if (process.env.NEXT_PUBLIC_AUDIT_NFT_CONTRACT && process.env.NEXT_PUBLIC_AUDIT_NFT_CONTRACT !== '0x449a12495A524fC7EA7A37a26b13d55911e51344') {
+      console.log('✅ Contract appears to be deployed');
+    } else {
+      console.log('❌ Need to deploy contract');
+    }
+
+    console.log('\n🚀 Next Steps:');
+    if (network.chainId !== 11155111) {
+      console.log('1. Run with: npx hardhat run scripts/test-web3-setup.js --network sepolia');
+    } else if (balance.lt(ethers.utils.parseEther('0.005'))) {
+      console.log('1. Get Sepolia ETH: https://sepoliafaucet.com/');
+      console.log('2. Run: npm run fix-web3');
+    } else if (!process.env.NEXT_PUBLIC_AUDIT_NFT_CONTRACT || process.env.NEXT_PUBLIC_AUDIT_NFT_CONTRACT === '0x449a12495A524fC7EA7A37a26b13d55911e51344') {
+      console.log('1. Deploy contract: npm run fix-web3');
+    } else {
+      console.log('✅ Everything looks good! Start dev server: npm run dev');
+    }
+
+  } catch (error) {
+    console.error('❌ Test failed:', error.message);
+    throw error;
+  }
+}
+
+// Run test
+if (require.main === module) {
+  testWeb3Setup()
+    .then(() => {
+      console.log('\n✅ Web3 setup test complete');
+      process.exit(0);
+    })
+    .catch((error) => {
+      console.error(`\n💥 Test failed: ${error.message}`);
+      process.exit(1);
+    });
+}
+
+module.exports = { testWeb3Setup };

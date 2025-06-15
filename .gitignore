@@ -45,4 +45,15 @@ trash/
 backup_*
 temp_*
 
+# project cleanup backup directories
+.backup-scripts/
+.debug-backup/
+.fixes-backup/
+.temp-backup/
+
+# development cache and artifacts
+.cache/
+cache/
+artifacts/
+
 .vercel

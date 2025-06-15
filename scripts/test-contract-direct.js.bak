@@ -1,0 +1,147 @@
+// scripts/test-contract-direct.js
+// Direct contract testing script
+
+const { ethers } = require('ethers');
+
+const CONTRACT_ADDRESS = '0x46E086aac77023AD6E1EA65cC23A6f0Fa91Cf118';
+const SEPOLIA_RPC = 'https://eth-sepolia.public.blastapi.io';
+
+// Minimal ABI to test basic functions
+const MINIMAL_ABI = [
+  {
+    "inputs": [],
+    "name": "getTotalAudits",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "AI_AUDIT_PRICE",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "STATIC_AUDIT_PRICE",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "contractAddress", "type": "address" },
+      { "internalType": "string", "name": "contractName", "type": "string" },
+      { "internalType": "string", "name": "ipfsHash", "type": "string" },
+      { "internalType": "uint8", "name": "securityScore", "type": "uint8" },
+      { "internalType": "enum DeFiWatchdogAuditNFT.RiskLevel", "name": "riskLevel", "type": "uint8" }
+    ],
+    "name": "mintStaticAuditReport",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+];
+
+async function testContract() {
+  console.log('🔍 Testing contract at:', CONTRACT_ADDRESS);
+  console.log('🌐 Using RPC:', SEPOLIA_RPC);
+  
+  try {
+    // Create provider
+    const provider = new ethers.providers.JsonRpcProvider(SEPOLIA_RPC);
+    console.log('✅ Provider created');
+    
+    // Check if address has code
+    const code = await provider.getCode(CONTRACT_ADDRESS);
+    console.log('📄 Contract code length:', code.length);
+    
+    if (code === '0x') {
+      console.log('❌ ERROR: No contract deployed at this address!');
+      console.log('💡 The address does not contain a smart contract');
+      return false;
+    }
+    
+    console.log('✅ Contract exists at the address');
+    
+    // Try to create contract instance
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, MINIMAL_ABI, provider);
+    console.log('✅ Contract instance created');
+    
+    // Test read functions
+    console.log('\n🧪 Testing contract functions...');
+    
+    try {
+      const totalAudits = await contract.getTotalAudits();
+      console.log('✅ getTotalAudits():', totalAudits.toString());
+    } catch (e) {
+      console.log('❌ getTotalAudits() failed:', e.message);
+    }
+    
+    try {
+      const aiPrice = await contract.AI_AUDIT_PRICE();
+      console.log('✅ AI_AUDIT_PRICE():', ethers.utils.formatEther(aiPrice), 'ETH');
+    } catch (e) {
+      console.log('❌ AI_AUDIT_PRICE() failed:', e.message);
+    }
+    
+    try {
+      const staticPrice = await contract.STATIC_AUDIT_PRICE();
+      console.log('✅ STATIC_AUDIT_PRICE():', ethers.utils.formatEther(staticPrice), 'ETH');
+    } catch (e) {
+      console.log('❌ STATIC_AUDIT_PRICE() failed:', e.message);
+    }
+    
+    // Test gas estimation for mint function
+    console.log('\n⛽ Testing gas estimation...');
+    try {
+      const testAddress = '0x2d8879046f1559e53eb052e949e9544bcb72f414';
+      const testName = 'Test Contract';
+      const testHash = 'QmTestHash123456789';
+      const testScore = 75;
+      const testRiskLevel = 0; // LOW
+      
+      const gasEstimate = await contract.estimateGas.mintStaticAuditReport(
+        testAddress,
+        testName,
+        testHash,
+        testScore,
+        testRiskLevel
+      );
+      
+      console.log('✅ Gas estimate for mintStaticAuditReport:', gasEstimate.toString());
+      return true;
+      
+    } catch (e) {
+      console.log('❌ Gas estimation failed:', e.message);
+      console.log('💡 This might be the source of the "cannot estimate gas" error');
+      
+      // Check if it's a contract validation error
+      if (e.message.includes('execution reverted')) {
+        console.log('🔍 Contract execution reverted. Possible reasons:');
+        console.log('  - Contract validation failed (address is not a contract)');
+        console.log('  - Contract name is empty');
+        console.log('  - IPFS hash is empty');
+        console.log('  - Security score is out of range (0-100)');
+        console.log('  - Duplicate certificate exists');
+      }
+      
+      return false;
+    }
+    
+  } catch (error) {
+    console.log('❌ Test failed:', error.message);
+    return false;
+  }
+}
+
+testContract()
+  .then((success) => {
+    if (success) {
+      console.log('\n✅ Contract test PASSED - Contract is working correctly');
+    } else {
+      console.log('\n❌ Contract test FAILED - Issues detected');
+    }
+  })
+  .catch(console.error);
